@@ -65,7 +65,25 @@ int main(int argc, char *argv[]) {
         printf("HELLO\n");
         int listen_err = (listen(server_socket, 1));
         if(listen_err != 0){
-            printf("Errno: %d", errno);
+            switch (errno) {
+                case EBADF:
+                    printf("EBADF\n");
+                    break;
+                case EDESTADDREQ:
+                    printf("EDESTADDREQ\n");
+                    break;
+                case EINVAL:
+                    printf("EINVAL\n");
+                    break;
+                case ENOTSTOCK:
+                    printf("ENOSTOCK\n");
+                    break;
+                case EOPNOTSUPP:
+                    printf("EOPNOTSUPP\n");
+                    break;
+                default:
+                    break;
+            }
         }
         printf("HELLO\n");
 
