@@ -33,21 +33,21 @@ int main(int argc, char *argv[]) {
 
         int connection_status = connect(my_socket, (struct sockaddr *) &server_address, sizeof(server_address));
         if (connection_status == -1) {
-            printf("Error making connection");
+            printf("Error making connection\n");
         }
 
         // prijimat data
         char server_response[256];
         recv(my_socket, &server_response, sizeof(server_response), 0);
 
-        printf("Response: %s", server_response);
+        printf("Response: %s\n", server_response);
 
         close(my_socket);
     }
     // Server
     else{
         printf("Server mode\n");
-        char server_message[256] = "You have reached the server!";
+        char server_message[256] = "You have reached the server!\n";
 
         // create server socket
         int server_socket;
