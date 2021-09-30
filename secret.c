@@ -61,8 +61,9 @@ int main(int argc, char *argv[]) {
 
         //bind socket
         bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-
+        printf("HELLO\n");
         listen(server_socket, 1);
+        printf("HELLO\n");
 
         int client_socket;
         client_socket = accept(server_socket, NULL, NULL);
