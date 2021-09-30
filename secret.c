@@ -12,15 +12,15 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#define CLIENT_MODE = 0
-#define SERVER_MODE = 1
+#define CLIENT_MODE 0
+#define SERVER_MODE 1
 
-#define DEF_PORT = 9245
+#define DEF_PORT 9245
 
 int main(int argc, char *argv[]) {
 
     // Client
-    if (argv[1] == CLIENT_MODE) {}    // create a socket
+    if (argv[1] == CLIENT_MODE) {    // create a socket
         int my_socket;
         my_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         char server_response[256];
         recv(my_socket, &server_response, sizeof(server_response), 0);
 
-        print("Response: %s", server_response);
+        printf("Response: %s", server_response);
 
         close(my_socket);
     }
