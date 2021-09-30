@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
         //bind socket
         bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
         printf("HELLO\n");
-        int listen_err = (listen(server_socket, 1);
+        int listen_err = (listen(server_socket, 1));
         if(listen_err != 0){
             printf(errno);
         }
