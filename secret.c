@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
         // adresa socketu
         struct sockaddr_in server_address;
         server_address.sin_family = AF_INET;
-        server_address.sin_port = htons( DEF_PORT);
+        server_address.sin_port = htons(DEF_PORT);
         server_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
         int connection_status = connect(my_socket, (struct sockaddr *) &server_address, sizeof(server_address));
@@ -49,7 +49,25 @@ int main(int argc, char *argv[]) {
 
         // create server socket
         int server_socket;
-        server_socket = socket(AF_INET)
+        server_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+
+        // define server address
+        struct sockaddr_in server_address;
+        server_address.sin_family = AF_INET;
+        server_address.sin_port = htons(DEF_PORT);
+        server_address.sin_addr.ss_addr = INADDR_ANY;
+
+        //bind socket
+        bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
+
+        listen(server_socket, 1);
+
+        int client_socket;
+        client_socket = accept(server_socket, NULL, NULL);
+
+        send(client_socket, server_message, sizeof(server_message), 0);
+
+        close(server_socket);
     }
 
     return 0;
