@@ -1,12 +1,12 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedandic -g
+CFLAGS=-std=c99 -Wall -Wextra -pedantic -g
 SRC=*.c
 HDR=*.h
 PROJ=secret
 
 ## make
-.PHONY: build
-build: clean
+.PHONY:$(PROJ)
+$(PROJ): clean
 	$(CC) $(CFLAGS) $(SRC) -o $(PROJ)
 
 ## odstraneni
