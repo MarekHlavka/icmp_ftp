@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
         struct sockaddr_in server_address;
         server_address.sin_family = AF_INET;
         server_address.sin_port = htons(DEF_PORT);
-        server_address.sin_addr.ss_addr = INADDR_ANY;
+        server_address.sin_addr.s_addr = INADDR_ANY;
 
         //bind socket
         bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
