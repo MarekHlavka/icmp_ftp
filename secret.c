@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
         printf("HELLO\n");
         int listen_err = (listen(server_socket, 1));
         if(listen_err != 0){
-            printf(errno);
+            printf("Errno: %d", errno);
         }
         printf("HELLO\n");
 
