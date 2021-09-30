@@ -69,14 +69,14 @@ int main(int argc, char *argv[]) {
                 case EBADF:
                     printf("EBADF\n");
                     break;
-                case EDESTADDREQ:
-                    printf("EDESTADDREQ\n");
+                case EDESTADDRREQ:
+                    printf("EDESTADDRREQ\n");
                     break;
                 case EINVAL:
                     printf("EINVAL\n");
                     break;
-                case ENOTSTOCK:
-                    printf("ENOSTOCK\n");
+                case ENOTSOCK:
+                    printf("ENOTSOCK\n");
                     break;
                 case EOPNOTSUPP:
                     printf("EOPNOTSUPP\n");
