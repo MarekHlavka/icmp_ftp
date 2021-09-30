@@ -19,6 +19,7 @@
 
 int main(int argc, char *argv[]) {
 
+    // Client
     if (argv[1] == CLIENT_MODE) {}    // create a socket
         int my_socket;
         my_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
@@ -42,8 +43,13 @@ int main(int argc, char *argv[]) {
 
         close(my_socket);
     }
+    // Server
     else{
+        char server_message[256] = "You have reached the server!";
 
+        // create server socket
+        int server_socket;
+        server_socket = socket(AF_INET)
     }
 
     return 0;
