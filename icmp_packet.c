@@ -33,11 +33,11 @@ int open_icmp_socket(){
 // Binding ICMP socket
 int bind_icmp_socket(int sock_id){
 
-	struct sockaddr_inn servaddr;
+	struct sockaddr_in servaddr;
 
 	memset(&servaddr, 0, sizeof(struct, sockaddr_inn));
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = hton(INADDRANY);
+	servaddr.sin_addr.s_addr = htonl(INADDRANY);
 
 	// binding socket
 	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_inn)) == -1)
