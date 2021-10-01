@@ -10,7 +10,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-
+// Opening socket for ICMP
 int open_icmp_socket(){
 
 	int sock_id, opt = 1;
@@ -28,6 +28,25 @@ int open_icmp_socket(){
 	}
 
 	return sock_id;
+}
+
+// Binding ICMP socket
+int bind_icmp_socket(int sock_id){
+
+	struct sockaddr_inn servaddr;
+
+	memset(&servaddr, 0, sizeof(struct, sockaddr_inn));
+	servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = hton(INADDRANY);
+
+	// binding socket
+	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_inn)) == -1)
+	{
+		perror("Unable to bind\n");
+		exit(EXIT_FAILURE);
+
+	}
+
 }
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp){
