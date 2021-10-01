@@ -31,7 +31,7 @@ int open_icmp_socket(){
 }
 
 // Binding ICMP socket
-int bind_icmp_socket(int sock_id){
+void bind_icmp_socket(int sock_id){
 
 	struct sockaddr_in servaddr;
 
