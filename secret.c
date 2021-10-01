@@ -2,9 +2,12 @@
 // Created by marek on 30.09.2021.
 //
 
+#include "icmp_packet.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <string.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,84 +19,9 @@
 #define CLIENT_MODE 0
 #define SERVER_MODE 1
 
-#define DEF_PORT 9245
+#define DEF_IP 0.0.0.0
 
 int main(int argc, char *argv[]) {
-
-    // Client
-    if (argv[1] == CLIENT_MODE) {    // create a socket
-        printf("Client mode\n");
-        int my_socket;
-        my_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-
-        // adresa socketu
-        struct sockaddr_in server_address;
-        server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(DEF_PORT);
-        server_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-        int connection_status = connect(my_socket, (struct sockaddr *) &server_address, sizeof(server_address));
-        if (connection_status == -1) {
-            printf("Error making connection\n");
-        }
-
-        // prijimat data
-        char server_response[256];
-        recv(my_socket, &server_response, sizeof(server_response), 0);
-
-        printf("Response: %s\n", server_response);
-
-        close(my_socket);
-    }
-    // Server
-    else{
-        printf("Server mode\n");
-        char server_message[256] = "You have reached the server!\n";
-
-        // create server socket
-        int server_socket;
-        server_socket = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-
-        // define server address
-        struct sockaddr_in server_address;
-        server_address.sin_family = AF_INET;
-        server_address.sin_port = htons(DEF_PORT);
-        server_address.sin_addr.s_addr = INADDR_ANY;
-
-        //bind socket
-        bind(server_socket, (struct sockaddr*) &server_address, sizeof(server_address));
-        printf("HELLO\n");
-        int listen_err = (listen(server_socket, 1));
-        if(listen_err != 0){
-            switch (errno) {
-                case EBADF:
-                    printf("EBADF\n");
-                    break;
-                case EDESTADDRREQ:
-                    printf("EDESTADDRREQ\n");
-                    break;
-                case EINVAL:
-                    printf("EINVAL\n");
-                    break;
-                case ENOTSOCK:
-                    printf("ENOTSOCK\n");
-                    break;
-                case EOPNOTSUPP:
-                    printf("EOPNOTSUPP\n");
-                    break;
-                default:
-                    break;
-            }
-        }
-        printf("HELLO\n");
-
-        int client_socket;
-        client_socket = accept(server_socket, NULL, NULL);
-
-        send(client_socket, server_message, sizeof(server_message), 0);
-
-        close(server_socket);
-    }
 
     return 0;
 }

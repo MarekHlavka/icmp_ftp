@@ -11,10 +11,9 @@
 #include <netinet/ip_icmp.h>
 
 
-void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp);
-
 int open_icmp_socket(){
-	int sock_id;
+
+	int sock_id, opt = 1;
 
 	sock_id = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
 
@@ -22,6 +21,12 @@ int open_icmp_socket(){
 		perror("Unable to open ICMP socket\n");
 		exit(EXIT_FAILURE);
 	}
+
+	if(setsockopt(sock_id, IPPROTO_IP, IP_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
+		perror("Unable to set IP_HDRINCL socket option\n");
+		exit(EXIT_FAILURE);
+	}
+
 	return sock_id;
 }
 
