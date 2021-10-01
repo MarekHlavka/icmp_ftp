@@ -17,7 +17,7 @@ int main(){
 	packet.payload = "Hello there!";
 	packet.payload_size = strlen(packet.payload);
 
-	soccket_id = open_icmp_socket();
+	socket_id = open_icmp_socket();
 
 	//send_icmp_socket(socket_id, &packet);
 

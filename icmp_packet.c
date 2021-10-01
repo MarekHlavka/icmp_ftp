@@ -35,12 +35,12 @@ int bind_icmp_socket(int sock_id){
 
 	struct sockaddr_in servaddr;
 
-	memset(&servaddr, 0, sizeof(struct sockaddr_inn));
+	memset(&servaddr, 0, sizeof(struct sockaddr_in));
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	// binding socket
-	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_inn)) == -1)
+	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) == -1)
 	{
 		perror("Unable to bind\n");
 		exit(EXIT_FAILURE);
