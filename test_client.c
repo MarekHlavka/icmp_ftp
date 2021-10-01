@@ -1,5 +1,6 @@
 #include "icmp_packet.h"
 #include <string.h>
+#include <stdio.h>
 
 int main(){
 	struct icmp_packet packet;
