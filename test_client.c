@@ -18,6 +18,7 @@ int main(){
 	packet.payload_size = strlen(packet.payload);
 
 	socket_id = open_icmp_socket();
+	printf("%d\n", socket_id);
 
 	//send_icmp_socket(socket_id, &packet);
 

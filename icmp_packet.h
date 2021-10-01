@@ -12,6 +12,6 @@ struct icmp_packet
 
 int open_icmp_socket();
 
-int bind_icmp_socket(int sock_id);
+void bind_icmp_socket(int sock_id);
 
 #endif //ICMP_PACKET
