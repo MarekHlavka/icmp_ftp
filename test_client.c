@@ -14,14 +14,15 @@ int main(){
 	strncpy(packet.src_addr, src_ip, strlen(src_ip) + 1);
 	strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
 
-	//set_reply_type(&packet);
+	set_reply_type(&packet);
 	packet.payload = "Hello there!";
 	packet.payload_size = strlen(packet.payload);
 
 	socket_id = open_icmp_socket();
 	printf("%d\n", socket_id);
 
-	//send_icmp_socket(socket_id, &packet);
-
-	//close_icmp_socket(socket_id);
+	printf("Sending...\n");
+	send_icmp_packet(socket_id, &packet);
+	printf("Closing...\n");
+	close_icmp_socket(socket_id);
 }
