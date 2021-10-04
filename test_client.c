@@ -2,9 +2,9 @@
 #include <string.h>
 #include <stdio.h>
 
-int main(){
+int main(int argc, char** argv){
 
-	if(1){
+	if(argc >= 2){
 		struct icmp_packet packet;
 		char *src_ip;
 		char *dst_ip;

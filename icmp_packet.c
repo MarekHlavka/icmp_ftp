@@ -10,6 +10,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
+#define DEBUG printf("Hello %d\n", __LINE__);
 
 uint16_t in_cksum(uint16_t *addr, int len);
 
@@ -80,7 +81,13 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 		exit(EXIT_FAILURE);
 	}
 
+	ip = (struct iphdr *)packet;
+	icmp = (struct icmphdr*)(packet + sizeof(struct iphdr));
+	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+
 	prepare_hdr(ip, icmp);
+
+	
 
 	ip->tot_len = htons(packet_size);
 	ip->saddr = src_addr.s_addr;
@@ -88,23 +95,73 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	memcpy(icmp_payload, packet_details->payload, packet_details->payload_size);
 	
+
 	icmp->type = packet_details->type;
 	icmp->checksum = 0;
 	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + packet_details->payload_size);
+	
+
 
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));
+	
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = dest_addr.s_addr;
-
+	
 	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
-
+	
 	free(packet);
 }
 
 
 
 void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
-	
+
+	struct sockaddr_in src_addr;
+	//struct sockaddr_in dest_addr;
+
+	struct iphdr *ip;
+	struct icmphdr *icmp;
+	char *icmp_payload;
+
+	int packet_size;
+	char *packet;
+
+	socklen_t src_addr_size;
+	int enc_MTU;
+
+	enc_MTU = MTU + sizeof(struct iphdr) + sizeof(struct icmphdr);
+
+	packet = calloc(enc_MTU, sizeof(uint8_t));
+	if(packet == NULL){
+		perror("No memory available\n");
+		close_icmp_socket(sock_id);
+		exit(-1);
+	}
+
+	src_addr_size = sizeof(struct sockaddr_in);
+
+	//Recieving packet
+	packet_size = recvfrom(sock_id, packet, enc_MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+
+	ip = (struct iphdr *)packet;
+	icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
+	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+
+	// packet details
+	inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
+	packet_details->type = icmp->type;
+	packet_details->payload_size = packet_size = sizeof(struct iphdr) - sizeof(struct icmphdr);
+	packet_details->payload = calloc(packet_details->payload_size, sizeof(uint8_t));
+	if(packet_details->payload == NULL){
+		perror("No memory available\n");
+		close_icmp_socket(sock_id);
+		exit(-1);
+	}
+	memcpy(packet_details->payload, icmp_payload, packet_details->payload_size);
+
+	free(packet);
+
 }
 
 void set_echo_type(struct icmp_packet *packet){
@@ -147,6 +204,7 @@ uint16_t in_cksum(uint16_t *addr, int len)
 }
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp){
+	
 	ip->version = 4;	
 	ip->ihl = 5;
 	ip->tos = 0;

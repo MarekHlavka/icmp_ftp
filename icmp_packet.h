@@ -1,6 +1,8 @@
 #ifndef ICMP_PACKET
 #define ICMP_PACKET
 
+#define MTU 1472
+
 struct icmp_packet
 {
 	char src_addr[100];
