@@ -1,4 +1,6 @@
 #include "icmp_packet.h"
+#include "file_handle.h"
+
 #include <string.h>
 #include <stdio.h>
 
@@ -17,15 +19,11 @@ int main(int argc, char** argv){
 		strncpy(packet.src_addr, src_ip, strlen(src_ip) + 1);
 		strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
 
-		FILE *fp;
-		fp = fopen("/file.txt", "rb");
-		if(fp == NULL){
-			return 1;
-		}
-		printf("%s\n", fp);
-
 		set_reply_type(&packet);
-		packet.payload = "Hello there!";
+		packet.payload = read_file_as_byte_array("file.txt");
+
+		printf("%s\n", packet.payload);
+
 		packet.payload_size = strlen(packet.payload);
 		printf("%d\n", packet.payload_size);
 
