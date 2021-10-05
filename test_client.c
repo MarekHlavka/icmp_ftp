@@ -17,6 +17,10 @@ int main(int argc, char** argv){
 		strncpy(packet.src_addr, src_ip, strlen(src_ip) + 1);
 		strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
 
+		FILE fp*;
+		fp = open("/file.txt", "rb");
+		printf("%s\n", fp);
+
 		set_reply_type(&packet);
 		packet.payload = "Hello there!";
 		packet.payload_size = strlen(packet.payload);

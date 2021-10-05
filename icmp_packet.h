@@ -12,6 +12,13 @@ struct icmp_packet
 	int payload_size;
 };
 
+struct s_icmp_payload
+{
+	int type;
+	int number;
+	char* payload;
+};
+
 int open_icmp_socket();
 
 void bind_icmp_socket(int sock_id);
