@@ -1,10 +1,12 @@
 #include "icmp_packet.h"
 #include "file_handle.h"
+#include "packet_handle.h"
 
 #include <string.h>
 #include <stdio.h>
 
-
+#define ACTUAL_IP 		"100.69.161.11"
+#define MAX_PYLD_SIZE 	MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_payload)
 int main(int argc, char** argv){
 
 	if(argc >= 2){
@@ -12,6 +14,8 @@ int main(int argc, char** argv){
 		char *src_ip;
 		char *dst_ip;
 		int socket_id;
+		int packet_count;
+
 
 		src_ip = "127.0.0.2";
 		dst_ip = "127.0.0.1";
@@ -21,14 +25,22 @@ int main(int argc, char** argv){
 
 		set_reply_type(&packet);
 		packet.payload = read_file_as_byte_array("file.txt");
+		packet_count = 1;
+
 
 		printf("%s\n", packet.payload);
+		printf("----------------------------------\n");
 
 		packet.payload_size = strlen(packet.payload);
-		printf("%d\n", packet.payload_size);
+
+
+
+		char **buff = divide_payload(packet.payload, packet.payload_size,
+			MAX_PYLD_SIZE, &packet_count);
+
+		printf("%d\n", packet_count);
 
 		socket_id = open_icmp_socket();
-		printf("%d\n", socket_id);
 
 		printf("Sending...\n");
 		send_icmp_packet(socket_id, &packet);

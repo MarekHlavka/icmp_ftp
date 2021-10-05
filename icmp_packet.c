@@ -3,12 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
-
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netinet/ip.h>
-#include <netinet/ip_icmp.h>
 
 #define DEBUG printf("Hello %d\n", __LINE__);
 

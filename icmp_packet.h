@@ -1,7 +1,14 @@
 #ifndef ICMP_PACKET
 #define ICMP_PACKET
 
-#define MTU 1472
+#include <stdint.h>
+
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+
+#define MTU 1500
 
 struct icmp_packet
 {
@@ -14,8 +21,8 @@ struct icmp_packet
 
 struct s_icmp_payload
 {
-	int type;
-	int number;
+	uint8_t type;
+	uint16_t number;
 	char* payload;
 };
 
