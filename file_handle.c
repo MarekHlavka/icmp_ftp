@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdio.h>
 
 char* read_file_as_byte_array(char* filename){
 
