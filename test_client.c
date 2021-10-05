@@ -18,7 +18,10 @@ int main(int argc, char** argv){
 		strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
 
 		FILE *fp;
-		fp = open("/file.txt", "rb");
+		fp = fopen("/file.txt", "rb");
+		if(fp == NULL){
+			return 1;
+		}
 		printf("%s\n", fp);
 
 		set_reply_type(&packet);
