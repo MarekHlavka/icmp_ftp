@@ -1,7 +1,8 @@
 #include "icmp_packet.h"
 #include <string.h>
 #include <stdio.h>
-/*
+
+
 int main(int argc, char** argv){
 
 	if(argc >= 2){
@@ -19,6 +20,7 @@ int main(int argc, char** argv){
 		set_reply_type(&packet);
 		packet.payload = "Hello there!";
 		packet.payload_size = strlen(packet.payload);
+		printf("%d\n", packet.payload_size);
 
 		socket_id = open_icmp_socket();
 		printf("%d\n", socket_id);
@@ -46,4 +48,4 @@ int main(int argc, char** argv){
 		close_icmp_socket(socket_id);
 	}
 
-}*/
+}
