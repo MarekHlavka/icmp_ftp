@@ -6,10 +6,10 @@
 #include <stdio.h>
 
 #define ACTUAL_IP 		"100.69.161.11"
-#define MAX_PYLD_SIZE 	MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_payload)
+#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_payload))
 int main(int argc, char** argv){
 
-	if(argc >= 2){
+	if(argc == 2){
 		struct icmp_packet packet;
 		char *src_ip;
 		char *dst_ip;
@@ -48,21 +48,30 @@ int main(int argc, char** argv){
 		close_icmp_socket(socket_id);
 	}
 	else{
-		struct icmp_packet packet;
-		int socket_id;
+		if(argc == 1){
+			struct icmp_packet packet;
+			int socket_id;
 
-		socket_id = open_icmp_socket();
-		bind_icmp_socket(socket_id);
+			socket_id = open_icmp_socket();
+			bind_icmp_socket(socket_id);
 
-		printf("Server initialized...\n");
-		while(1){
-			recieve_icmp_packet(socket_id, &packet);
-			printf("%s\n", packet.src_addr);
-			printf("%s\n", packet.dest_addr);
-			printf("%s\n", packet.type);
-			printf("%s\n", packet.payload);
+			printf("Server initialized...\n");
+			while(1){
+				recieve_icmp_packet(socket_id, &packet);
+				printf("%s\n", packet.src_addr);
+				printf("%s\n", packet.dest_addr);
+				printf("%d\n", packet.type);
+				printf("%s\n", packet.payload);
+			}
+			close_icmp_socket(socket_id);
 		}
-		close_icmp_socket(socket_id);
+		// AES testing
+		else{
+
+			char buff[64] = "Hello there! Hello there!";
+			char *new_buff = aes_encryption(buff);
+
+		}
 	}
 
 }
