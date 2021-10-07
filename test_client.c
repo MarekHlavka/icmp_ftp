@@ -37,9 +37,9 @@ int main(int argc, char** argv){
 
 
 		char **buff = divide_payload(packet.payload, packet.payload_size,
-			MAX_PYLD_SIZE, &packet_count);
+			MAX_PYLD_SIZE/10, &packet_count);
 
-		aes_encryption(buff[1]);
+		packet.payload = buff[1];
 
 		printf("%d\n", packet_count);
 
