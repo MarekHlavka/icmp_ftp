@@ -8,7 +8,8 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#define MTU 1500
+#define MTU 			1500
+#define MAX_FILENAME 	32
 
 struct icmp_packet
 {
@@ -17,13 +18,16 @@ struct icmp_packet
 	int type;
 	char* payload;
 	int payload_size;
+	uint8_t file_type;
+	uint16_t order;
+	char filename[MAX_FILENAME];
 };
 
-struct s_icmp_payload
+struct s_icmp_file_info
 {
 	uint8_t type;
-	uint16_t number;
-	char* payload;
+	uint16_t order;
+	char filename[MAX_FILENAME];
 };
 
 int open_icmp_socket();

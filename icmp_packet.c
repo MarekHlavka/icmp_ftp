@@ -49,7 +49,8 @@ void bind_icmp_socket(int sock_id){
 
 }
 
-void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
+void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
+{
 
 	// Source ane destination IP addresses
 	struct in_addr src_addr;
@@ -57,6 +58,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	struct iphdr *ip;
 	struct icmphdr *icmp;
+	struct s_icmp_file_info *icmp_file;
 	char *icmp_payload;
 
 	int packet_size;
@@ -67,7 +69,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	inet_pton(AF_INET, packet_details->src_addr, &src_addr);
 	inet_pton(AF_INET, packet_details->dest_addr, &dest_addr);
 
-	packet_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + packet_details->payload_size;
+	packet_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
 	packet = calloc(packet_size, sizeof(uint8_t));
 	if(packet == NULL){
 		perror("No memory available\n");
@@ -77,7 +79,8 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	ip = (struct iphdr *)packet;
 	icmp = (struct icmphdr*)(packet + sizeof(struct iphdr));
-	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+	icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr)); 
+	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
 
 	prepare_hdr(ip, icmp);
 
@@ -94,7 +97,9 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	icmp->checksum = 0;
 	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + packet_details->payload_size);
 	
-
+	icmp_file->type = packet_details->file_type;
+	icmp_file->order = packet_details->order;
+	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));
 	

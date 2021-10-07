@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 #define ACTUAL_IP 		"100.69.161.11"
-#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_payload))
+#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info))
 
 int main(int argc, char** argv){
 
@@ -24,11 +24,16 @@ int main(int argc, char** argv){
 		strncpy(packet.src_addr, src_ip, strlen(src_ip) + 1);
 		strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
 
+		char filename[MAX_FILENAME] = "file.txt";
+
 		set_reply_type(&packet);
-		packet.payload = read_file_as_byte_array("file.txt");
+		packet.payload = read_file_as_byte_array(filename);
 		packet_count = 1;
 
 		packet.payload_size = strlen(packet.payload);
+		packet.file_type = 1;
+		packet.order = 0;
+		memcpy(packet.filename, filename, sizeof(filename));
 
 
 
