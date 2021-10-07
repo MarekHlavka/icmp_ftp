@@ -6,7 +6,6 @@
 #include <stdio.h>
 
 #define ACTUAL_IP 		"100.69.161.11"
-#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info))
 
 int main(int argc, char** argv){
 
@@ -62,10 +61,13 @@ int main(int argc, char** argv){
 			printf("Server initialized...\n");
 			while(1){
 				recieve_icmp_packet(socket_id, &packet);
-				printf("%s\n", packet.src_addr);
-				printf("%s\n", packet.dest_addr);
-				printf("%d\n", packet.type);
-				printf("%s\n", packet.payload);
+				printf("SRC:		%s\n", packet.src_addr);
+				printf("DEST:		%s\n", packet.dest_addr);
+				printf("TYPE:		%d\n", packet.type);
+				printf("FILETYPE:	%d\n", packet.file_type);
+				printf("ORDER:		%d\n", packet.order);
+				printf("FILENAME:	%s\n", packet.filename);
+				printf("Payload:\n%s\n", packet.payload);
 			}
 			close_icmp_socket(socket_id);
 		}

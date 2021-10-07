@@ -120,17 +120,15 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	struct iphdr *ip;
 	struct icmphdr *icmp;
+	struct s_icmp_file_info *icmp_file;
 	char *icmp_payload;
 
 	int packet_size;
 	char *packet;
 
 	socklen_t src_addr_size;
-	int enc_MTU;
 
-	enc_MTU = MTU + sizeof(struct iphdr) + sizeof(struct icmphdr);
-
-	packet = calloc(enc_MTU, sizeof(uint8_t));
+	packet = calloc(MAX_PYLD_SIZE, sizeof(uint8_t));
 	if(packet == NULL){
 		perror("No memory available\n");
 		close_icmp_socket(sock_id);
@@ -140,17 +138,18 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	src_addr_size = sizeof(struct sockaddr_in);
 
 	//Recieving packet
-	packet_size = recvfrom(sock_id, packet, enc_MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+	packet_size = recvfrom(sock_id, packet, MAX_PYLD_SIZE, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
 
 	ip = (struct iphdr *)packet;
 	icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
-	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+	icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
 
 	// packet details
 	inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
 	inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
 	packet_details->type = icmp->type;
-	packet_details->payload_size = packet_size = sizeof(struct iphdr) - sizeof(struct icmphdr);
+	packet_details->payload_size = packet_size - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info);
 	packet_details->payload = calloc(packet_details->payload_size, sizeof(uint8_t));
 	if(packet_details->payload == NULL){
 		perror("No memory available\n");
@@ -158,6 +157,10 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 		exit(-1);
 	}
 	memcpy(packet_details->payload, icmp_payload, packet_details->payload_size);
+
+	packet_details->file_type = icmp_file->type;
+	packet_details->order = icmp_file->order;
+	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
 	free(packet);
 
