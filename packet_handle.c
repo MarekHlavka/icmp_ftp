@@ -2,8 +2,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <openssl/aes.h>
-#include <openssl/rand.h>
+#include "aes.h"
+
+#define KEY 		"xhlavk09"
+#define KEY_SIZE 	32
+#define IV_SIZE		KEY_SIZE/2
 
 char** divide_payload(char* payload, int payload_size,
 	int max_payload_size, int *count){
@@ -42,37 +45,49 @@ char** divide_payload(char* payload, int payload_size,
 
 }
 
+void random_char_array_gen(unsigned char *buff, int size){
+	for(int i = 0; i < size; i++){
+		buff[i] = (rand()%26)+65;
+	}
+}
+
 char* aes_encryption(char* src_char){
 
-	int keylength = 256;
-	char key[100] = "xhlavk09";
-	unsigned char aes_key[keylength/8];
-	memset(aes_key, 0, sizeof(aes_key));
-	memcpy(aes_key, key, sizeof(key));
-	size_t inputs_length = strlen(src_char);
+	// Copy source text
+	int source_size = strlen(src_char);
+	unsigned char *original = (unsigned char*)malloc(source_size*sizeof(unsigned char));
+	memcpy(original, src_char, source_size);
+	
+	printf("Original: %s\n", original);
 
-	printf("Original: %s\n", src_char);
+	// Creating key
+	unsigned char key[KEY_SIZE];
+	memset(key, 0, sizeof(key));
+	memcpy(key, KEY, sizeof(KEY));
 
-	unsigned char iv[AES_BLOCK_SIZE];
-	RAND_bytes(iv, AES_BLOCK_SIZE);
+	// Creating IV
+	unsigned char iv[IV_SIZE];
+	random_char_array_gen(iv, IV_SIZE);
 
-	const size_t encslength = (inputs_length + AES_BLOCK_SIZE);
-	unsigned char enc_out[encslength];
-	unsigned char dec_out[inputs_length];
-	memset(enc_out, 0, sizeof(enc_out));
-	memset(dec_out, 0, sizeof(dec_out));
+	// Creating buffers
+	unsigned char ciphertext[source_size*8];
+	unsigned char decryptedtext[source_size*8];
 
-	AES_KEY enc_key, dec_key;
-	AES_set_encrypt_key(aes_key, keylength, &enc_key);
-	AES_cbc_encrypt((unsigned char*)src_char, enc_out, inputs_length, &enc_key, iv, AES_ENCRYPT);
+	int decryptedtext_len, ciphertext_len;
 
-	AES_set_decrypt_key(aes_key, keylength, &dec_key);
-	AES_cbc_encrypt(enc_out, dec_out, encslength, &dec_key, iv, AES_DECRYPT);
+	//Encrypt
+	ciphertext_len = encrypt(original, source_size, key, iv, ciphertext);
 
-	printf("Original: %s\n", src_char);
-	printf("Decrypted: %s\n", enc_out);
-	printf("Encrypted: %s\n", dec_out);
+	printf("Encrypted: %s\n", ciphertext);
 
+	//Decrypt
+	decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decryptedtext);
+
+	decryptedtext[decryptedtext_len] = '\0';
+
+	printf("Decrypted: %s\n", decryptedtext);
+
+	free(original);
 
 	return src_char;
 }

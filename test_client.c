@@ -7,6 +7,7 @@
 
 #define ACTUAL_IP 		"100.69.161.11"
 #define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_payload))
+
 int main(int argc, char** argv){
 
 	if(argc == 2){
@@ -27,16 +28,14 @@ int main(int argc, char** argv){
 		packet.payload = read_file_as_byte_array("file.txt");
 		packet_count = 1;
 
-
-		printf("%s\n", packet.payload);
-		printf("----------------------------------\n");
-
 		packet.payload_size = strlen(packet.payload);
 
 
 
 		char **buff = divide_payload(packet.payload, packet.payload_size,
 			MAX_PYLD_SIZE, &packet_count);
+
+		aes_encryption(buff[1]);
 
 		printf("%d\n", packet_count);
 
@@ -68,8 +67,7 @@ int main(int argc, char** argv){
 		// AES testing
 		else{
 
-			char buff[64] = "Hello there! Hello there!";
-			char *new_buff = aes_encryption(buff);
+			return 0;
 
 		}
 	}
