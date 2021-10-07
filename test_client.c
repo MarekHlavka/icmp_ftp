@@ -39,13 +39,13 @@ int main(int argc, char** argv){
 		char **buff = divide_payload(packet.payload, packet.payload_size,
 			MAX_PYLD_SIZE/10, &packet_count);
 
-		packet.payload = buff[1];
+		packet.payload = buff[0];
 
 		printf("%d\n", packet_count);
 
 		socket_id = open_icmp_socket();
 
-		printf("Sending...\n");
+		printf("Sending...\n%s\n", packet.payload);
 		send_icmp_packet(socket_id, &packet);
 		printf("Closing...\n");
 		close_icmp_socket(socket_id);
