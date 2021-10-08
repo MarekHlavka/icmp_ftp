@@ -23,28 +23,5 @@ void run_client(char *address, char *src_filename){
 	payload = read_file_as_byte_array(src_filename);
 
 	send_icmp_file(src_ip, dst_ip, payload, src_filename);
-	/*
-
-	packet.payload_size = strlen(packet.payload);
-	packet.file_type = 1;
-	packet.order = 0;
-	memcpy(packet.filename, src_filename, sizeof(src_filename));
-
-
-
-	char **buff = divide_payload(packet.payload, packet.payload_size,
-		MAX_PYLD_SIZE/10, &packet_count);
-
-	packet.payload = buff[0];
-
-	printf("%d\n", packet_count);
-
-	socket_id = open_icmp_socket();
-
-	printf("Sending...\n%s\n", packet.payload);
-	send_icmp_packet(socket_id, &packet);
-	printf("Closing...\n");
-	close_icmp_socket(socket_id);
-	*/
 
 }

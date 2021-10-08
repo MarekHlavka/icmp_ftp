@@ -60,6 +60,7 @@ int main(int argc, char** argv){
 
 	if(server_flag && (file_flag || ip_flag)){
 		perror("Server cannot be run with destination IP address or filename\n");
+		printf("F: %d\nIP: %d\nS: %d\n", file_flag, ip_flag, server_flag);
 		print_usage();
 
 	}
@@ -67,13 +68,6 @@ int main(int argc, char** argv){
 		perror("Missing arguments\n");
 		print_usage();
 	}
-	if(file_flag){
-		printf("File argument: %s\n%s\n",file_flag ? "true" : "false", filename);
-	}
-	if(ip_flag){
-		printf("IP argument: %s\n%s\n",ip_flag ? "true" : "false", address);
-	}
-	printf("Server argument: %s\n",server_flag ? "true" : "false");
 
 	if(server_flag){
 		run_server();
