@@ -1,8 +1,9 @@
 #include "packet_handle.h"
+#include "aes.h"
+#include "icmp_packet.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "aes.h"
 
 #define KEY 		"xhlavk09"
 #define KEY_SIZE 	32
@@ -42,6 +43,15 @@ char** divide_payload(char* payload, int payload_size,
 	}
 
 	return payload_list;
+
+}
+
+void free_file_buff(char **buff, int buff_cnt){
+
+	for(int i = 0; i < buff_cnt; i++){
+		free(buff[i]);
+	}
+	free(buff);
 
 }
 
@@ -90,4 +100,40 @@ char* aes_encryption(char* src_char){
 	free(original);
 
 	return src_char;
+}
+
+void send_icmp_file(char *src, char *dst, char *payload, char *filename){
+
+	char **buff;
+	int packet_count = 1;
+	int sock_id;
+	int payload_size = strlen(payload);
+	struct icmp_packet packet;
+
+	buff = divide_payload(payload, payload_size, MAX_PYLD_SIZE, &packet_count);
+
+	sock_id = open_icmp_socket();
+
+	memcpy(packet.src_addr, src, strlen(src) + 1);
+	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
+
+	set_echo_type(&packet);
+	packet.file_type = 1;
+	memcpy(packet.filename, filename, strlen(filename));
+
+	for(int i = 0; i < packet_count; i++){	
+
+		strcpy(packet.payload, buff[i]);
+		packet.payload_size = strlen(packet.payload);
+		packet.order = i;
+
+		send_icmp_packet(sock_id, &packet);
+
+	}
+
+	close_icmp_socket(sock_id);
+
+
+
+
 }
