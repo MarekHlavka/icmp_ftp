@@ -8,7 +8,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 
-#define MTU 			1500
+#define MTU 			1480
 #define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info))
 #define MAX_FILENAME 	32
 

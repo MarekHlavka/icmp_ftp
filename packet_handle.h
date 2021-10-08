@@ -1,6 +1,8 @@
 #ifndef PACKET_HANDLE
 #define PACKET_HANDLE
 
+#include "icmp_packet.h"
+
 #define DEBUG printf("Hello %d\n", __LINE__);	
 
 char** divide_payload(char* payload, int payload_size,

@@ -3,6 +3,7 @@
 #include "client.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <getopt.h>
 #include <stdbool.h>
 
@@ -36,6 +37,7 @@ int main(int argc, char** argv){
 	char filename[256];
 	char address[64];
 
+
 	while((argument = getopt(argc, argv, ":r:s:l")) != -1){
 		switch(argument){
 			case 'r':
@@ -56,21 +58,30 @@ int main(int argc, char** argv){
 		exit(WRONG_PARAMS);
 	}
 
-	printf("File argument: %s\n%s\n",file_flag ? "true" : "false", filename);
-	printf("IP argument: %s\n%s\n",ip_flag ? "true" : "false", address);
+	if(server_flag && (file_flag || ip_flag)){
+		perror("Server cannot be run with destination IP address or filename\n");
+		print_usage();
+
+	}
+	if(!server_flag && (!file_flag || !ip_flag)){
+		perror("Missing arguments\n");
+		print_usage();
+	}
+	if(file_flag){
+		printf("File argument: %s\n%s\n",file_flag ? "true" : "false", filename);
+	}
+	if(ip_flag){
+		printf("IP argument: %s\n%s\n",ip_flag ? "true" : "false", address);
+	}
 	printf("Server argument: %s\n",server_flag ? "true" : "false");
 
-
-	/*
-	if(argc == 2){
-		run_client();
-		return 0;
+	if(server_flag){
+		run_server();
 	}
 	else{
-		run_server();
-		return 0;
+		run_client(address, filename);
 	}
-	*/
+
 	return 0;
 
 }

@@ -8,6 +8,10 @@ char* read_file_as_byte_array(char* filename){
 	long filelen;
 
 	fileptr = fopen(filename, "rb");
+	if(fileptr == NULL){
+		perror("Error opening file!");
+		exit(EXIT_FAILURE);
+	}
 	fseek(fileptr, 0, SEEK_END);
 	filelen = ftell(fileptr);
 	rewind(fileptr);

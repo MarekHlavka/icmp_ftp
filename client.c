@@ -1,30 +1,38 @@
 #include "client.h"
+#include <netdb.h>
+#include <stdlib.h>
 
-void run_client(){
+#define MAX_ADDR_LEN	256
+
+void run_client(char *address, char *src_filename){
 
 	struct icmp_packet packet;
-	char *src_ip;
-	char *dst_ip;
+	char src_ip[MAX_ADDR_LEN];
+	char dst_ip[MAX_ADDR_LEN];
 	int socket_id;
 	int packet_count;
+	struct hostent *dst_hstmn;
+	struct hostent *src_hstmn;
 
 
-	src_ip = "127.0.0.2";
-	dst_ip = "127.0.0.1";
+
+	dst_hstmn = gethostbyname(address);
+	strcpy(dst_ip, inet_ntoa(*((struct in_addr*)dst_hstmn->h_addr_list[0])));
+
+	src_hstmn = gethostbyname("0.0.0.0");
+	strcpy(src_ip, inet_ntoa(*((struct in_addr*)src_hstmn->h_addr_list[0])));
 
 	strncpy(packet.src_addr, src_ip, strlen(src_ip) + 1);
-	strncpy(packet.dest_addr, dst_ip, strlen(src_ip) + 1);
-
-	char filename[MAX_FILENAME] = "file.txt";
+	strncpy(packet.dest_addr, dst_ip, strlen(dst_ip) + 1);
 
 	set_reply_type(&packet);
-	packet.payload = read_file_as_byte_array(filename);
+	packet.payload = read_file_as_byte_array(src_filename);
 	packet_count = 1;
 
 	packet.payload_size = strlen(packet.payload);
 	packet.file_type = 1;
 	packet.order = 0;
-	memcpy(packet.filename, filename, sizeof(filename));
+	memcpy(packet.filename, src_filename, sizeof(src_filename));
 
 
 
