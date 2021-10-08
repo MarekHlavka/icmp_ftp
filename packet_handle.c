@@ -119,11 +119,13 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 	set_echo_type(&packet);
 	packet.file_type = 1;
-	memcpy(packet.filename, filename, strlen(filename));
+	strcpy(packet.filename, filename);
+
+
 
 	for(int i = 0; i < packet_count; i++){	
 
-		strcpy(packet.payload, buff[i]);
+		packet.payload = buff[i];
 		packet.payload_size = strlen(packet.payload);
 		packet.order = i;
 
