@@ -109,7 +109,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 	buff = divide_payload(payload, payload_size, MAX_PYLD_SIZE, &packet_count);
 	
-	sock_id = open_icmp_socket();
+	//sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -120,24 +120,24 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 
 	for(int i = 0; i < packet_count; i++){	
-
+		DEBUG
 		// Encrypt payload
 		encrypted_buff = aes_encryption(buff[i], AES_ENCRYPT, &encrypt_size, 0);
 		char tmp_buff[encrypt_size];
 		memcpy(tmp_buff, encrypted_buff, encrypt_size);
 		free(encrypted_buff);
-
+		DEBUG
 		strcpy(packet.payload, tmp_buff);
 		packet.cipher_len = encrypt_size;
 		packet.payload_size = strlen(packet.payload);
 		packet.order = i;
 
 
-		send_icmp_packet(sock_id, &packet);
+		//send_icmp_packet(sock_id, &packet);
 
 	}
 	free_file_buff(buff, packet_count);
-	close_icmp_socket(sock_id);
+	//close_icmp_socket(sock_id);
 
 
 
