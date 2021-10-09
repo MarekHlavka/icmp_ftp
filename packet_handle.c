@@ -12,9 +12,9 @@
 char** divide_payload(char* payload, int payload_size,
 	int max_payload_size, int *count){
 
-	int packet_count = payload_size / max_payload_size;
+	int packet_count = strlen(payload) / max_payload_size;
 
-	if(payload_size % max_payload_size > 0){
+	if(strlen(payload) % max_payload_size > 0){
 		packet_count++;
 	}
 
@@ -67,7 +67,7 @@ unsigned char* aes_encryption(char* src_char, int mode, int *out_size){
 	unsigned char *original = (unsigned char*)malloc(source_size*sizeof(unsigned char));
 	memcpy(original, src_char, source_size);
 	
-	printf("Original: %s\n", original);
+	//printf("Original: %s\n", original);
 
 	// Creating key
 	unsigned char key[KEY_SIZE];
@@ -82,14 +82,14 @@ unsigned char* aes_encryption(char* src_char, int mode, int *out_size){
 		unsigned char *ciphertext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
 		*out_size = encrypt(original, source_size, key, iv, ciphertext);
 		free(original);
-		printf("Encrypted: %s\n", ciphertext);
+		//printf("Encrypted: %s\n", ciphertext);
 		return ciphertext;
 	}
 	if(mode == AES_DECRYPT){
 		unsigned char *decryptedtext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
 		*out_size = decrypt(original, source_size, key, iv, decryptedtext);
 		free(original);
-		printf("Decrypted: %s\n", decryptedtext);
+		//printf("Decrypted: %s\n", decryptedtext);
 		return decryptedtext;
 	}
 	exit(EXIT_FAILURE);
@@ -111,7 +111,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	free(encrypted_buff);
 
 	buff = divide_payload(tmp_buff, encrypt_size, MAX_PYLD_SIZE, &packet_count);
-
+	
 	sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
