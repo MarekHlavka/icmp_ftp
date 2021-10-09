@@ -21,6 +21,7 @@ struct icmp_packet
 	int payload_size;
 	uint8_t file_type;
 	uint16_t order;
+	int cipher_len;
 	char filename[MAX_FILENAME];
 };
 
@@ -28,6 +29,7 @@ struct s_icmp_file_info
 {
 	uint8_t type;
 	uint16_t order;
+	int cipher_len;
 	char filename[MAX_FILENAME];
 };
 
