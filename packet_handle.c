@@ -34,6 +34,7 @@ char** divide_payload(char* payload, int payload_size,
 			exit(EXIT_FAILURE);
 		}
 		strncpy(payload_list[i], payload + (i * max_payload_size), max_payload_size);
+		printf("%s\n", payload_list[i]);
 
 	}
 
