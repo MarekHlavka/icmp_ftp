@@ -21,9 +21,6 @@ void run_server(){
 		printf("ORDER:		%d\n", packet.order);
 		printf("FILENAME:	%s\n", packet.filename);
 		printf("PLD_SIZE:   %d\n", strlen(packet.payload));
-
-		create_file("test2.txt", packet.payload);
-
 		printf("Payload:\n%s\n", packet.payload);
 		printf("_________________________________________\n");
 	}

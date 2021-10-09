@@ -78,7 +78,7 @@ unsigned char* aes_encryption(char* src_char, int mode, int *out_size, int ciphe
 	unsigned char *original = (unsigned char*)malloc(source_size*sizeof(unsigned char));
 	memcpy(original, src_char, source_size);
 	
-	//printf("Original: %s\n", original);
+	printf("Original: %s\n", original);
 
 	// Creating key
 	unsigned char key[KEY_SIZE];
@@ -86,24 +86,28 @@ unsigned char* aes_encryption(char* src_char, int mode, int *out_size, int ciphe
 	memcpy(key, KEY, sizeof(KEY));
 
 	// Creating IV
-	unsigned char iv[IV_SIZE];
-	random_char_array_gen(iv, IV_SIZE);
+	unsigned char iv[IV_SIZE] = "12345678987654321";
+	//random_char_array_gen(iv, IV_SIZE);
 
+	int decryptedtext_len, ciphertext_len;
 	if(mode == AES_ENCRYPT){
-		unsigned char *ciphertext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
-		*out_size = encrypt(original, source_size, key, iv, ciphertext);
-		free(original);
-		//printf("Encrypted: %s\n", ciphertext);
+		//Encrypt
+		unsigned char *ciphertext = (unsigned char *)malloc(source_size*8*sizeof(unsigned char));
+		ciphertext_len = encrypt(original, source_size, key, iv, ciphertext);
+		*out_size = ciphertext_len;
+		printf("Encrypted: %s\n", ciphertext);
 		return ciphertext;
 	}
 	if(mode == AES_DECRYPT){
-		unsigned char *decryptedtext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
-		*out_size = decrypt(original, cipher_len, key, iv, decryptedtext);
-		free(original);
-		//printf("Decrypted: %s\n", decryptedtext);
+		//Decrypt
+		unsigned char *decryptedtext = (unsigned char *)malloc(source_size*8*sizeof(unsigned char));
+		decryptedtext_len = decrypt(original, cipher_len, key, iv, decryptedtext);
+		*out_size = decryptedtext_len;
+		printf("Decrypted: %s\n", decryptedtext);
 		return decryptedtext;
+
 	}
-	exit(EXIT_FAILURE);
+	return NULL;
 }
 
 void send_icmp_file(char *src, char *dst, char *payload, char *filename){
@@ -121,9 +125,16 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	memcpy(tmp_buff, encrypted_buff, encrypt_size);
 	free(encrypted_buff);
 
-	buff = divide_payload(tmp_buff, strlen(tmp_buff), MAX_PYLD_SIZE, &packet_count);
+	int decrypt_size = encrypt_size;
+	encrypted_buff = aes_encryption(tmp_buff, AES_DECRYPT, &encrypt_size, decrypt_size);
+	char dec_buff[encrypt_size];
+	memcpy(dec_buff, encrypted_buff, encrypt_size);
+	free(encrypted_buff);
+	printf("%s\n", dec_buff);
+
+	//buff = divide_payload(tmp_buff, strlen(tmp_buff), MAX_PYLD_SIZE, &packet_count);
 	
-	sock_id = open_icmp_socket();
+	//sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -136,18 +147,16 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 	for(int i = 0; i < packet_count; i++){	
 
-		create_file("test1.txt", buff[i]);
-
 		packet.payload = buff[i];
 		packet.payload_size = strlen(packet.payload);
 		packet.order = i;
 
 
-		send_icmp_packet(sock_id, &packet);
+		//send_icmp_packet(sock_id, &packet);
 
 	}
 	free_file_buff(buff, packet_count);
-	close_icmp_socket(sock_id);
+	//close_icmp_socket(sock_id);
 
 
 
