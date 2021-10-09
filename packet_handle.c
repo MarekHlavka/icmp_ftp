@@ -119,7 +119,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 
 
-	buff = divide_payload((char *)encrypted_buff, encrypt_size, MAX_PYLD_SIZE, &packet_count);
+	buff = divide_payload((char *)encrypted_buff, strlen((char *)encrypted_buff), MAX_PYLD_SIZE, &packet_count);
 	
 	sock_id = open_icmp_socket();
 
