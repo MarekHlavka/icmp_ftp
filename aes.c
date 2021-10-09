@@ -48,7 +48,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
 	}
 
 	if(1 != EVP_DecryptInit_ex(ctx, EVP_aes_256_cbc(), NULL, key, iv)){
-		perror("Initializing encryption\n");
+		perror("Initializing decryption\n");
 		exit(EXIT_FAILURE);
 	}	
 
@@ -59,7 +59,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
 	plaintext_len = len;
 
 	if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)){
-		perror("Finalising encryption\n");
+		perror("Finalising decryption\n");
 		exit(EXIT_FAILURE);
 	}
 	plaintext_len += len;
