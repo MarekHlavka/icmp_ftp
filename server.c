@@ -18,13 +18,10 @@ void run_server(){
 		printf("FILETYPE:	%d\n", packet.file_type);
 		printf("ORDER:		%d\n", packet.order);
 		printf("FILENAME:	%s\n", packet.filename);
-		printf("PLD_SIZE:   %d\n", strlen(packet.payload));
 
-		char decrypted_buff[packet.decrypted_size];
+		unsigned char decrypted_buff[packet.decrypted_size];
 		int decrypted_size = aes_encryption((unsigned char *)packet.payload,
-			(unsigned  char *)decrypted_buff,
-			AES_DECRYPT, packet.cipher_len,
-			(unsigned char *)packet.iv);
+			decrypted_buff, AES_DECRYPT, packet.cipher_len, packet.iv);
 
 		printf("Payload:\n%s\n", packet.payload);
 		printf("_________________________________________\n");

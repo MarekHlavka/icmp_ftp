@@ -20,13 +20,13 @@ struct icmp_packet
 	char src_addr[100];
 	char dest_addr[100];
 	int type;
-	char* payload;
+	unsigned char* payload;
 	int payload_size;
 	uint8_t file_type;
 	uint16_t order;
 	int cipher_len;
 	int decrypted_size;
-	char iv[IV_SIZE];
+	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };
 
@@ -36,7 +36,7 @@ struct s_icmp_file_info
 	uint16_t order;
 	int cipher_len;
 	int decrypted_size;
-	char iv[IV_SIZE];
+	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };
 

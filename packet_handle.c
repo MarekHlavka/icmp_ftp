@@ -138,8 +138,8 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	for(int i = 0; i < packet_count; i++){	
 
 
-		packet.payload = buff[i];
-		packet.payload_size = strlen(packet.payload);
+		memcpy(packet.payload, buff[i], strlen(buff[i]));
+		packet.payload_size = strlen(buff[i]);
 		packet.order = i;
 
 		send_icmp_packet(sock_id, &packet);
