@@ -60,7 +60,7 @@ void random_char_array_gen(unsigned char *buff, int size){
 	}
 }
 
-char* aes_encryption(char* src_char){
+unsigned char* aes_encryption(char* src_char, int mode, int *out_size){
 
 	// Copy source text
 	int source_size = strlen(src_char);
@@ -78,27 +78,21 @@ char* aes_encryption(char* src_char){
 	unsigned char iv[IV_SIZE];
 	random_char_array_gen(iv, IV_SIZE);
 
-	// Creating buffers
-	unsigned char ciphertext[source_size*8];
-	unsigned char decryptedtext[source_size*8];
-
-	int decryptedtext_len, ciphertext_len;
-
-	//Encrypt
-	ciphertext_len = encrypt(original, source_size, key, iv, ciphertext);
-
-	printf("Encrypted: %s\n", ciphertext);
-
-	//Decrypt
-	decryptedtext_len = decrypt(ciphertext, ciphertext_len, key, iv, decryptedtext);
-
-	decryptedtext[decryptedtext_len] = '\0';
-
-	printf("Decrypted: %s\n", decryptedtext);
-
-	free(original);
-
-	return src_char;
+	if(mode == AES_ENCRYPT){
+		unsigned char *ciphertext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
+		*out_size = encrypt(original, source_size, key, iv, ciphertext);
+		free(original);
+		printf("Encrypted: %s\n", ciphertext);
+		return ciphertext;
+	}
+	if(mode == AES_DECRYPT){
+		unsigned char *decryptedtext = (unsigned char*)malloc(source_size*8*sizeof(unsigned char));
+		*out_size = decrypt(original, source_size, key, iv, decryptedtext);
+		free(original);
+		printf("Decrypted: %s\n", decryptedtext);
+		return decryptedtext;
+	}
+	exit(EXIT_FAILURE);
 }
 
 void send_icmp_file(char *src, char *dst, char *payload, char *filename){
@@ -106,12 +100,19 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	char **buff;
 	int packet_count = 1;
 	int sock_id;
-	int payload_size = strlen(payload);
+	int encrypt_size = 0;
+	unsigned char *encrypted_buff;
 	struct icmp_packet packet;
 
-	buff = divide_payload(payload, payload_size, MAX_PYLD_SIZE, &packet_count);
+	// Encrypt payload
+	encrypted_buff = aes_encryption(payload, AES_ENCRYPT, &encrypt_size);
+	char tmp_buff[encrypt_size];
+	memcpy(tmp_buff, encrypted_buff, encrypt_size);
+	free(encrypted_buff);
 
-	//sock_id = open_icmp_socket();
+	buff = divide_payload(tmp_buff, encrypt_size, MAX_PYLD_SIZE, &packet_count);
+
+	sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -128,11 +129,11 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 		packet.order = i;
 
 
-		//send_icmp_packet(sock_id, &packet);
+		send_icmp_packet(sock_id, &packet);
 
 	}
 
-	//close_icmp_socket(sock_id);
+	close_icmp_socket(sock_id);
 
 
 
