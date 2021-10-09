@@ -127,8 +127,8 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 		memcpy(tmp_buff, encrypted_buff, encrypt_size);
 		free(encrypted_buff);
 		DEBUG
-		
-		strcpy(packet.payload, tmp_buff);
+
+		//strcpy(packet.payload, tmp_buff);
 		packet.cipher_len = encrypt_size;
 		packet.payload_size = strlen(packet.payload);
 		packet.order = i;
