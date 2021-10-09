@@ -132,7 +132,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 		send_icmp_packet(sock_id, &packet);
 
 	}
-
+	free_file_buff(buff, packet_count);
 	close_icmp_socket(sock_id);
 
 
