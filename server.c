@@ -21,16 +21,10 @@ void run_server(){
 		printf("ORDER:		%d\n", packet.order);
 		printf("FILENAME:	%s\n", packet.filename);
 		printf("PLD_SIZE:   %d\n", strlen(packet.payload));
+
+		create_file("test2.txt", packet.payload);
+
 		printf("Payload:\n%s\n", packet.payload);
-
-		dec_payload = aes_encryption(packet.payload, AES_DECRYPT, &payload_size, packet.cipher_len);
-		char enc_payload[payload_size + 1];
-		memcpy(enc_payload, dec_payload, payload_size);
-		free(dec_payload);
-
-		enc_payload[payload_size + 1] = '\0';
-		
-		
 		printf("_________________________________________\n");
 	}
 	close_icmp_socket(socket_id);

@@ -60,6 +60,17 @@ void random_char_array_gen(unsigned char *buff, int size){
 	}
 }
 
+void create_file(char *name, char *content){
+	FILE *file = fopen(name, "w");
+
+	int result = fputs(content, file);
+	if(result == EOF){
+		perror("File write");
+		exit(EXIT_FAILURE);
+	}
+	fclose(file);
+}
+
 unsigned char* aes_encryption(char* src_char, int mode, int *out_size, int cipher_len){
 
 	// Copy source text
@@ -124,6 +135,8 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 
 	for(int i = 0; i < packet_count; i++){	
+
+		create_file("test1.txt", buff[i]);
 
 		packet.payload = buff[i];
 		packet.payload_size = strlen(packet.payload);
