@@ -130,6 +130,8 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	packet.cipher_len = encrypt_size;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
+	printf("-------------------------------------------------------");
+	printf("Encrypted:\n%s\n", encrypted_buff);
 
 	for(int i = 0; i < packet_count; i++){	
 
