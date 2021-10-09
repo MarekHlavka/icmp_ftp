@@ -34,7 +34,7 @@ char** divide_payload(char* payload, int payload_size,
 			exit(EXIT_FAILURE);
 		}
 		strncpy(payload_list[i], payload + (i * max_payload_size), max_payload_size);
-		printf("%s\n", payload_list[i]);
+		printf("%d. part:\n%s\n############################\n", i, payload_list[i]);
 
 	}
 
@@ -131,7 +131,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	packet.cipher_len = encrypt_size;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
-	printf("-------------------------------------------------------");
+	printf("-------------------------------------------------------\n");
 	printf("Encrypted:\n%s\n", encrypted_buff);
 
 	for(int i = 0; i < packet_count; i++){	
