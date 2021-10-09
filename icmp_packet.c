@@ -100,6 +100,8 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->type = packet_details->file_type;
 	icmp_file->order = packet_details->order;
 	icmp_file->cipher_len = packet_details->cipher_len;
+
+	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));

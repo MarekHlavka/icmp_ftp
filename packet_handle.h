@@ -16,7 +16,8 @@ void random_char_array_gen(unsigned char *buff, int size);
 
 void create_file(char *name, char *content);
 
-unsigned char* aes_encryption(char* src_char, int mode, int *out_size, int cipher_len);
+int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
+	int mode, int src_len, unsigned char *iv_in);
 
 void send_icmp_file(char *src, char *dst, char *payload, char *filename);
 #endif //PACKET_HANDLE
