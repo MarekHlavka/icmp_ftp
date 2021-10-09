@@ -20,6 +20,7 @@ void run_server(){
 		printf("FILETYPE:	%d\n", packet.file_type);
 		printf("ORDER:		%d\n", packet.order);
 		printf("FILENAME:	%s\n", packet.filename);
+		printf("Payload:\n%s\n", packet.payload);
 		
 		dec_payload = aes_encryption(packet.payload, AES_DECRYPT, &payload_size, packet.cipher_len);
 		char enc_payload[payload_size + 1];
@@ -28,7 +29,7 @@ void run_server(){
 
 		enc_payload[payload_size + 1] = '\0';
 		
-		printf("Payload:\n%s\n", packet.payload);
+		
 		printf("_________________________________________\n");
 	}
 	close_icmp_socket(socket_id);
