@@ -129,6 +129,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	set_echo_type(&packet);
 	packet.file_type = 1;
 	packet.cipher_len = encrypt_size;
+	packet.decrypted_size = payload_size;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
 	printf("-------------------------------------------------------\n");
