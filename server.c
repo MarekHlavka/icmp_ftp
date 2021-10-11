@@ -28,10 +28,6 @@ void run_server(){
 		printf("%s\n", packet.payload);
 
 		//printf("Encrypt:\n");
-		
-		unsigned char decrypted_buff[packet.decrypted_size];
-		int decrypted_size = aes_encryption((unsigned char *)packet.payload,
-			decrypted_buff, AES_DECRYPT, packet.cipher_len, packet.iv);
 		printf("_________________________________________\n");
 		test = 0;
 	}

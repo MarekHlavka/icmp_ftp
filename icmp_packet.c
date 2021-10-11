@@ -104,10 +104,6 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->decrypted_size = packet_details->decrypted_size;
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 
-	unsigned char decrypted_buff[icmp_file->decrypted_size*3];
-	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);
-
-
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));
@@ -115,7 +111,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = dest_addr.s_addr;
 	
-	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
+	//sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
 	free(packet);
 }
@@ -174,6 +170,10 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
+	unsigned char decrypted_buff[icmp_file->decrypted_size*3];
+	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);
+	printf("Decrypted:\n%s\n--------------------\n", decrypted_buff);
+	
 	free(packet);
 
 }
