@@ -127,7 +127,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 	buff = divide_payload((char *)encrypted_buff, strlen((char *)encrypted_buff), MAX_PYLD_SIZE, &packet_count);
 	
-	sock_id = 58;// open_icmp_socket();
+	sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -154,7 +154,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
 	}
 	free_file_buff(buff, packet_count);
-	//close_icmp_socket(sock_id);
+	close_icmp_socket(sock_id);
 
 
 
