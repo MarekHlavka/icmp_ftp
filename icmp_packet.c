@@ -113,6 +113,8 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 
 	printf("Payload: -%d-\n%s\n", strlen((char*)icmp_payload), icmp_payload);
 	printf("IV: -%d-\n%s\n", strlen((char*)icmp_file->iv), icmp_file->iv);
+	printf("Dec_size: -%d-\n", icmp_file->decrypted_size);
+	printf("Cipher_len: -%d-\n", icmp_file->cipher_len);
 	
 	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
@@ -175,6 +177,8 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	printf("Payload: -%d-\n%s\n", strlen((char*)icmp_payload), icmp_payload);
 	printf("IV: -%d-\n%s\n", strlen((char*)icmp_file->iv), icmp_file->iv);
+	printf("Dec_size: -%d-\n", icmp_file->decrypted_size);
+	printf("Cipher_len: -%d-\n", icmp_file->cipher_len);
 
 	unsigned char decrypted_buff[icmp_file->decrypted_size*3];
 	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);
