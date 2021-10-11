@@ -1,4 +1,5 @@
 #include "icmp_packet.h"
+#include "packet_handle.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,7 +60,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	struct iphdr *ip;
 	struct icmphdr *icmp;
 	struct s_icmp_file_info *icmp_file;
-	char *icmp_payload;
+	unsigned char *icmp_payload;
 
 	int packet_size;
 	char *packet;
@@ -80,7 +81,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	ip = (struct iphdr *)packet;
 	icmp = (struct icmphdr*)(packet + sizeof(struct iphdr));
 	icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr)); 
-	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+	icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
 
 	prepare_hdr(ip, icmp);
 
@@ -101,8 +102,12 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->order = packet_details->order;
 	icmp_file->cipher_len = packet_details->cipher_len;
 	icmp_file->decrypted_size = packet_details->decrypted_size;
-
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
+
+	unsigned char decrypted_buff[icmp_file->decrypted_size*3];
+	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);
+
+
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));
@@ -125,7 +130,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	struct iphdr *ip;
 	struct icmphdr *icmp;
 	struct s_icmp_file_info *icmp_file;
-	char *icmp_payload;
+	unsigned char *icmp_payload;
 
 	int packet_size;
 	char *packet;
@@ -147,7 +152,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	ip = (struct iphdr *)packet;
 	icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
 	icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
-	icmp_payload = (char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+	icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
 
 	// packet details
 	inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
@@ -164,6 +169,9 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
+	packet_details->cipher_len = icmp_file->cipher_len;
+	packet_details->decrypted_size = icmp_file->decrypted_size;
+	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
 	free(packet);
