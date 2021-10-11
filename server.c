@@ -29,7 +29,6 @@ void run_server(){
 
 		//printf("Encrypt:\n");
 		printf("_________________________________________\n");
-		test = 0;
 	}
 	close_icmp_socket(socket_id);
 	
