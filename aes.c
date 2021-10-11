@@ -59,6 +59,7 @@ int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
 	plaintext_len = len;
 
 	if(1 != EVP_DecryptFinal_ex(ctx, plaintext + len, &len)){
+		ERR_print_errors_fp(stderr);
 		perror("Finalising decryption\n");
 		exit(EXIT_FAILURE);
 	}
