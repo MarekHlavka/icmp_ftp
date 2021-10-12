@@ -117,8 +117,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	// Encrypt payload
 	unsigned char encrypted_buff[payload_size*3];
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
-	printf("Original:\n%s\n--------------------\n", unsigned_payload);
-
+	
 	/*
 	printf("%d\n", encrypt_size);
 	printf("%d\n", payload_size);

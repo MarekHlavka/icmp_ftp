@@ -21,14 +21,7 @@ void run_server(){
 		//printf("ORDER:		%d\n", packet.order);
 		//printf("FILENAME:	%s\n", packet.filename);
 
-		printf("%d\n", packet.cipher_len);
-		printf("%d\n", packet.decrypted_size);
-		printf("%s\n", packet.iv);
-
-		printf("%s\n", packet.payload);
-
 		//printf("Encrypt:\n");
-		printf("_________________________________________\n");
 	}
 	close_icmp_socket(socket_id);
 	

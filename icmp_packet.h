@@ -9,7 +9,7 @@
 #include <netinet/ip_icmp.h>
 
 #define MTU 			1480
-#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info))
+#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info) - 150)
 #define MAX_FILENAME 	32
 #define KEY 		"xhlavk09"
 #define KEY_SIZE 	32

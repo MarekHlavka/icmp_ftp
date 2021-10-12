@@ -4,20 +4,13 @@
 #include "icmp_packet.h"
 
 #define DEBUG printf("Hello %d\n", __LINE__);	
-#define AES_ENCRYPT 	0
-#define AES_DECRYPT		1
 
 char** divide_payload(char* payload, int payload_size,
 	int max_payload_size, int *count);
 
-void free_file_buff(char **buff, int buff_cnt);
-
 void random_char_array_gen(unsigned char *buff, int size);
 
-void create_file(char *name, char *content);
+char* aes_encryption(char* src_char);
 
-int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
-	int mode, int src_len, unsigned char *iv_in);
-
-void send_icmp_file(char *src, char *dst, char *payload, char *filename);
+void send_icmp_file();
 #endif //PACKET_HANDLE

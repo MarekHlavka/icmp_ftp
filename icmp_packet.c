@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <openssl/conf.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
 #define DEBUG printf("Hello %d\n", __LINE__);
 
 uint16_t in_cksum(uint16_t *addr, int len);
@@ -111,10 +115,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = dest_addr.s_addr;
 
-	printf("Payload: -%d-\n%s\n", strlen((char*)icmp_payload), icmp_payload);
-	printf("IV: -%d-\n%s\n", strlen((char*)icmp_file->iv), icmp_file->iv);
-	printf("Dec_size: -%d-\n", icmp_file->decrypted_size);
-	printf("Cipher_len: -%d-\n", icmp_file->cipher_len);
+	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->cipher_len);
 	
 	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
@@ -175,15 +176,15 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
-	printf("Payload: -%d-\n%s\n", strlen((char*)icmp_payload), icmp_payload);
-	printf("IV: -%d-\n%s\n", strlen((char*)icmp_file->iv), icmp_file->iv);
-	printf("Dec_size: -%d-\n", icmp_file->decrypted_size);
-	printf("Cipher_len: -%d-\n", icmp_file->cipher_len);
+	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->cipher_len);
 
-	unsigned char decrypted_buff[icmp_file->decrypted_size*3];
-	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);
-	printf("Decrypted:\n%s\n--------------------\n", decrypted_buff);
+	
+	unsigned char decrypted_buff[icmp_file->decrypted_size*2];
+	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);	
+	
+	decrypted_buff[icmp_file->decrypted_size] = '\0';
 
+	printf("%s\n", decrypted_buff);	
 	free(packet);
 
 }
