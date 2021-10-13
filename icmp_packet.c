@@ -96,9 +96,6 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	ip->saddr = src_addr.s_addr;
 	ip->daddr = dest_addr.s_addr;
 
-	memcpy(icmp_payload, packet_details->payload, packet_details->payload_size);
-	
-
 	icmp->type = packet_details->type;
 	icmp->checksum = 0;
 	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + packet_details->payload_size);
@@ -108,6 +105,11 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->cipher_len = packet_details->cipher_len;
 	icmp_file->decrypted_size = packet_details->decrypted_size;
 	icmp_file->part_size = packet_details->part_size;
+
+	printf("-----\n%d\n-----\n", icmp_file->part_size);
+
+	memcpy(icmp_payload, packet_details->payload, packet_details->part_size);
+
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
@@ -117,7 +119,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = dest_addr.s_addr;
 
-	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->cipher_len);
+	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->part_size);
 	
 	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
@@ -163,31 +165,37 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
 	packet_details->type = icmp->type;
 	packet_details->payload_size = packet_size - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info);
-	packet_details->payload = calloc(packet_details->payload_size, sizeof(uint8_t));
-	if(packet_details->payload == NULL){
-		perror("No memory available\n");
-		close_icmp_socket(sock_id);
-		exit(-1);
-	}
-	memcpy(packet_details->payload, icmp_payload, packet_details->payload_size);
 
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
 	packet_details->cipher_len = icmp_file->cipher_len;
 	packet_details->decrypted_size = icmp_file->decrypted_size;
 	packet_details->part_size = icmp_file->part_size;
+
+	packet_details->payload = calloc(packet_details->part_size, sizeof(uint8_t));
+	if(packet_details->payload == NULL){
+		perror("No memory available\n");
+		close_icmp_socket(sock_id);
+		exit(-1);
+	}
+
+	printf("-----\n%d\n-----\n", packet_details->part_size);
+
+	memcpy(packet_details->payload, icmp_payload, packet_details->part_size - 84);
+
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
 	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->part_size);
 
-	
+	/*
 	unsigned char decrypted_buff[icmp_file->decrypted_size*2];
 	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);	
 	
 	decrypted_buff[icmp_file->decrypted_size] = '\0';
 
-	printf("%s\n", decrypted_buff);	
+	printf("%s\n", decrypted_buff);
+	*/
 	free(packet);
 
 }

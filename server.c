@@ -8,10 +8,9 @@ void run_server(){
 	socket_id = open_icmp_socket();
 	bind_icmp_socket(socket_id);
 
-	int test = 1;
-
 	//printf("Server initialized...\n");
-	while(test == 1){
+	while(1){
+		printf("-----------------------------------------------\n");
 		recieve_icmp_packet(socket_id, &packet);
 		//printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
 		//printf("SRC:		%s\n", packet.src_addr);

@@ -6,7 +6,7 @@
 #define DEBUG printf("Hello %d\n", __LINE__);	
 
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
-	int *count, int *packet_sizes);
+	int *count, int *last_size);
 
 void random_char_array_gen(unsigned char *buff, int size);
 
