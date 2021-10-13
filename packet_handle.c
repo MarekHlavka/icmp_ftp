@@ -5,44 +5,58 @@
 #include <stdio.h>
 #include <string.h>
 
-char** divide_payload(char* payload, int payload_size,
-	int max_payload_size, int *count){
+unsigned char** divide_payload(unsigned char* payload, int payload_size,
+ int *count, int *packet_sizes){
 
-	int packet_count = payload_size / max_payload_size;
+	int packet_count = payload_size / MAX_PYLD_SIZE;
+	int last_size = payload_size % MAX_PYLD_SIZE;
 
-	if(payload_size % max_payload_size > 0){
+	if(last_size > 0){
 		packet_count++;
 	}
+	else{
+		last_size = MAX_PYLD_SIZE;
+	}
 
+	packet_sizes = (int *)malloc(packet_count*sizeof(int));
 	*count = packet_count;
 
 	//printf("Payload size: %d\n", payload_size);
-	//printf("Max payload size: %d\n", max_payload_size);
+	//printf("Max payload size: %d\n", MAX_PYLD_SIZE);
 	//printf("Payload count size: %d\n", packet_count);
 
-	char** payload_list = (char**)malloc(packet_count * sizeof(char*));
+	unsigned char** payload_list = (unsigned char**)malloc(packet_count * sizeof(unsigned char*));
 	if(payload_list == NULL){
 		perror("No available memory\n");
 		exit(EXIT_FAILURE);
 	}
 
-	for(int i = 0; i < packet_count; i++){
+	for(int i = 0; i < packet_count - 1 ; i++){
 
-		payload_list[i] = (char *)malloc(max_payload_size * sizeof(char));
+		payload_list[i] = (unsigned char *)malloc(MAX_PYLD_SIZE * sizeof(unsigned char));
 		if(payload_list[i] == NULL){
 			perror("No available memory\n");
 			exit(EXIT_FAILURE);
 		}
-		strncpy(payload_list[i], payload + (i * max_payload_size), max_payload_size);
+		packet_sizes[i] = MAX_PYLD_SIZE;
+		memcpy(payload_list[i], payload + (i * MAX_PYLD_SIZE), MAX_PYLD_SIZE);
 		//printf("%d. part:\n%s\n############################\n", i, payload_list[i]);
 
 	}
+
+	// last packet
+	payload_list[packet_count - 1] = (unsigned char *)malloc(last_size * sizeof(unsigned char));
+	if(payload_list[packet_count - 1] == NULL){
+		perror("No available memory\n");
+		exit(EXIT_FAILURE);
+	}
+	packet_sizes[packet_count - 1] = last_size;
 
 	return payload_list;
 
 }
 
-void free_file_buff(char **buff, int buff_cnt){
+void free_file_buff(unsigned char **buff, int buff_cnt){
 
 	for(int i = 0; i < buff_cnt; i++){
 		free(buff[i]);
@@ -101,10 +115,11 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 
 void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 
-	char **buff;
+	unsigned char **buff;
 	int packet_count = 1;
 	int sock_id;
 	int payload_size = strlen(payload);
+	int *packet_sizes = NULL;
 	unsigned char unsigned_payload[payload_size];
 	unsigned char iv[IV_SIZE];
 	struct icmp_packet packet;
@@ -124,7 +139,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	printf("%s\n", iv);
 	printf("%s\n", encrypted_buff);*/
 
-	buff = divide_payload((char *)encrypted_buff, strlen((char *)encrypted_buff), MAX_PYLD_SIZE, &packet_count);
+	buff = divide_payload(encrypted_buff, strlen((char *)encrypted_buff), packet_sizes, &packet_count);
 	
 	sock_id = open_icmp_socket();
 
@@ -146,7 +161,8 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 		
 		packet.payload = (unsigned char *)malloc(encrypt_size*sizeof(unsigned char));
 		memcpy(packet.payload, encrypted_buff, encrypt_size);
-		packet.payload_size = encrypt_size;
+		packet.payload_size = packet_sizes[i] + sizeof(struct s_icmp_file_info);
+		packet.part_size = packet_sizes[i];
 		packet.order = i;
 
 		send_icmp_packet(sock_id, &packet);

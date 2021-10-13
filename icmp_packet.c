@@ -1,5 +1,6 @@
 #include "icmp_packet.h"
 #include "packet_handle.h"
+#include "aes.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -106,6 +107,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->order = packet_details->order;
 	icmp_file->cipher_len = packet_details->cipher_len;
 	icmp_file->decrypted_size = packet_details->decrypted_size;
+	icmp_file->part_size = packet_details->part_size;
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
@@ -173,10 +175,11 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	packet_details->order = icmp_file->order;
 	packet_details->cipher_len = icmp_file->cipher_len;
 	packet_details->decrypted_size = icmp_file->decrypted_size;
+	packet_details->part_size = icmp_file->part_size;
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
-	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->cipher_len);
+	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->part_size);
 
 	
 	unsigned char decrypted_buff[icmp_file->decrypted_size*2];

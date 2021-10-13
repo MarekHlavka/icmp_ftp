@@ -26,6 +26,7 @@ struct icmp_packet
 	uint16_t order;
 	int cipher_len;
 	int decrypted_size;
+	int part_size;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };
@@ -36,6 +37,7 @@ struct s_icmp_file_info
 	uint16_t order;
 	int cipher_len;
 	int decrypted_size;
+	int part_size;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };
