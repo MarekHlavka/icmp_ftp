@@ -143,7 +143,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	socklen_t src_addr_size;
 
-	packet = calloc(MAX_PYLD_SIZE, sizeof(uint8_t));
+	packet = calloc(MTU, sizeof(uint8_t));
 	if(packet == NULL){
 		perror("No memory available\n");
 		close_icmp_socket(sock_id);
@@ -153,7 +153,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	src_addr_size = sizeof(struct sockaddr_in);
 
 	//Recieving packet
-	packet_size = recvfrom(sock_id, packet, MAX_PYLD_SIZE, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+	packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
 
 	ip = (struct iphdr *)packet;
 	icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
@@ -181,7 +181,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	printf("-----\n%d\n-----\n", packet_details->part_size);
 
-	memcpy(packet_details->payload, icmp_payload, packet_details->part_size - 84);
+	memcpy(packet_details->payload, icmp_payload, packet_details->part_size);
 
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
