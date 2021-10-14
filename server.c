@@ -11,12 +11,15 @@ void run_server(){
 	unsigned char **buff = NULL;
 	int packet_count = 0;
 	int last_size = 0;
-	int out_size = 0;
+	int cipher_len = 0;
+	unsigned char iv[IV_SIZE];
 
 	//printf("Server initialized...\n");
 	while(1){
-		printf("-----------------------------------------------\n");
 		recieve_icmp_packet(socket_id, &packet);
+
+		cipher_len = packet.cipher_len;
+		memcpy(iv, packet.iv, IV_SIZE);
 
 		if(buff == NULL){
 			buff = (unsigned char **)malloc(packet.count * MAX_PYLD_SIZE * sizeof(unsigned char));
@@ -40,32 +43,20 @@ void run_server(){
 			last_size = packet.part_size;
 		}
 
-		//printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n");
-		//printf("SRC:		%s\n", packet.src_addr);
-		//printf("DEST:		%s\n", packet.dest_addr);
-		//printf("TYPE:		%d\n", packet.type);
-		//printf("FILETYPE:	%d\n", packet.file_type);
-		//printf("ORDER:		%d\n", packet.order);
-		//printf("FILENAME:	%s\n", packet.filename);
-
-		//printf("Encrypt:\n");
 		if(packet.count == packet_count){
 			break;
 		}
 	}
 
-	printf("%d\n", packet_count);
+	unsigned char *merged_buff = NULL;
+	merged_buff = merge_payload(buff, packet_count, last_size);
+	unsigned char decrypted[cipher_len*2];
 
-	for(int i = 0; i < packet_count; i++){
-		if(i == packet_count -1){
-			out_size = last_size;
-		}
-		else{
-			out_size = MAX_PYLD_SIZE;
-		}
-		BIO_dump_fp (stdout, (const char *)buff[i], out_size);
-		printf("------------------------------\n");
-	}
+	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
+
+	decrypted[strlen((char *)decrypted)] = '\0';
+
+	printf("%s\n", (char *)decrypted);
 
 	close_icmp_socket(socket_id);
 	

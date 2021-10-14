@@ -18,8 +18,6 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 		*last_size = MAX_PYLD_SIZE;
 	}
 	*count = packet_count;
-	printf("%d\n%d\n", packet_count, payload_size);
-
 	unsigned char** payload_list = (unsigned char**)malloc(packet_count * sizeof(unsigned char*));
 	if(payload_list == NULL){
 		perror("No available memory\n");
@@ -41,15 +39,18 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 
 }
 
-unsigned char* merge_payload(unsigned char **source, int count){
+unsigned char* merge_payload(unsigned char **source, int count, int last_size){
 
-	unsigned char *buff = (unsigned char *)malloc(MAX_PYLD_SIZE * count * sizeof(unsigned char));
-	for(int i = 0; i < count; i++){
-		printf("%s\n", source[i]);
-	}
+	int source_size = MAX_PYLD_SIZE;
+
+	unsigned char *buff = (unsigned char *)malloc(((MAX_PYLD_SIZE * (count - 1) + last_size)) * sizeof(unsigned char));
 
 	for(int i = 0; i < count ; i++){
-		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], MAX_PYLD_SIZE);
+
+		if(i == (count -1)){
+			source_size = last_size;
+		}
+		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], source_size);
 		//free(source[i]);
 	}
 
@@ -103,9 +104,6 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 		unsigned char ciphertext[src_len*3];
 		ciphertext_len = encrypt(src_char, src_len, key, iv, ciphertext);
 		memcpy(dst_char, ciphertext, ciphertext_len);
-
-		BIO_dump_fp (stdout, (const char *)dst_char, ciphertext_len);
-
 		return ciphertext_len;
 	}
 	if(mode == AES_DECRYPT){
@@ -133,7 +131,6 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	memcpy(unsigned_payload, payload, payload_size);
 	// Generate IV
 	random_char_array_gen(iv, IV_SIZE);
-	//printf("Original:\n%s\n", unsigned_payload);
 
 	// Encrypt payload
 	unsigned char encrypted_buff[payload_size*3];
@@ -152,8 +149,6 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	packet.count = packet_count;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
-	//printf("-------------------------------------------------------\n");
-	//printf("Encrypted:\n%s\n", encrypted_buff);
 
 	for(int i = 0; i < packet_count; i++){	
 
@@ -166,9 +161,6 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 		}
 
 		packet.payload = (unsigned char *)malloc(packet_size*sizeof(unsigned char));
-
-		DEBUG
-
 		memcpy(packet.payload, buff[i], packet_size);
 		packet.payload_size = packet_size;
 		packet.part_size = packet_size;
