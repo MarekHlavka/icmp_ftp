@@ -103,7 +103,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->type = packet_details->file_type;
 	icmp_file->order = packet_details->order;
 	icmp_file->cipher_len = packet_details->cipher_len;
-	icmp_file->decrypted_size = packet_details->decrypted_size;
+	icmp_file->count = packet_details->count;
 	icmp_file->part_size = packet_details->part_size;
 
 	printf("-----\n%d\n-----\n", icmp_file->part_size);
@@ -169,7 +169,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
 	packet_details->cipher_len = icmp_file->cipher_len;
-	packet_details->decrypted_size = icmp_file->decrypted_size;
+	packet_details->count = icmp_file->count;
 	packet_details->part_size = icmp_file->part_size;
 
 	packet_details->payload = calloc(packet_details->part_size, sizeof(uint8_t));
@@ -185,9 +185,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details){
 
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
-
-	BIO_dump_fp (stdout, (const char *)icmp_payload, packet_details->part_size);
-
+	
 	/*
 	unsigned char decrypted_buff[icmp_file->decrypted_size*2];
 	int decrypted_size = aes_encryption(icmp_payload, decrypted_buff, AES_DECRYPT, icmp_file->cipher_len, icmp_file->iv);	

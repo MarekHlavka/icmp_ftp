@@ -41,6 +41,24 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 
 }
 
+unsigned char* merge_payload(unsigned char **source, int count){
+
+	unsigned char *buff = (unsigned char *)malloc(MAX_PYLD_SIZE * count * sizeof(unsigned char));
+	for(int i = 0; i < count; i++){
+		printf("%s\n", source[i]);
+	}
+
+	for(int i = 0; i < count ; i++){
+		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], MAX_PYLD_SIZE);
+		//free(source[i]);
+	}
+
+	//free(source);
+
+	return buff;
+
+}
+
 void free_file_buff(unsigned char **buff, int buff_cnt){
 
 	for(int i = 0; i < buff_cnt; i++){
@@ -131,7 +149,7 @@ void send_icmp_file(char *src, char *dst, char *payload, char *filename){
 	set_echo_type(&packet);
 	packet.file_type = 1;
 	packet.cipher_len = encrypt_size;
-	packet.decrypted_size = payload_size;
+	packet.count = packet_count;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
 	//printf("-------------------------------------------------------\n");

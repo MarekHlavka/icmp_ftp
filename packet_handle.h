@@ -8,6 +8,8 @@
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
 	int *count, int *last_size);
 
+unsigned char* marge_payload(unsigned char **source, int count);
+
 void random_char_array_gen(unsigned char *buff, int size);
 
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
