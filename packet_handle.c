@@ -75,17 +75,6 @@ void random_char_array_gen(unsigned char *buff, int size){
 	}
 }
 
-void create_file(char *name, char *content){
-	FILE *file = fopen(name, "w");
-
-	int result = fputs(content, file);
-	if(result == EOF){
-		perror("File write");
-		exit(EXIT_FAILURE);
-	}
-	fclose(file);
-}
-
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int mode, int src_len, unsigned char *iv_in){
 

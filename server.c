@@ -13,13 +13,15 @@ void run_server(){
 	int last_size = 0;
 	int cipher_len = 0;
 	unsigned char iv[IV_SIZE];
+	char filename[MAX_FILENAME];
 
 	//printf("Server initialized...\n");
 	while(1){
-		recieve_icmp_packet(socket_id, &packet);
 
+		recieve_icmp_packet(socket_id, &packet);
 		cipher_len = packet.cipher_len;
 		memcpy(iv, packet.iv, IV_SIZE);
+		memcpy(filename, packet.filename, MAX_FILENAME);
 
 		if(buff == NULL){
 			buff = (unsigned char **)malloc(packet.count * MAX_PYLD_SIZE * sizeof(unsigned char));
@@ -54,9 +56,9 @@ void run_server(){
 
 	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 
-	decrypted[strlen((char *)decrypted)] = '\0';
+	//decrypted[strlen((char *)decrypted)] = '\0';
 
-	printf("%s\n", (char *)decrypted);
+	write_file_as_byte_array(filename, decrypted, decrypted_len);
 
 	close_icmp_socket(socket_id);
 	
