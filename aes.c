@@ -2,6 +2,15 @@
 #include <openssl/evp.h>
 #include <openssl/err.h>
 
+/*
+*	Funkce na zašifrování zdrojového pole
+*	plaintext 		- Ukazatel na zdrojové pole
+*	plaintext_len	- Délka zdrojového pole
+*	key				- Klíč na šifrování
+*	iv				- Startovací vektor pro šifrování
+*	ciphertext 		- Ukazatel na výsledné zašifrované pole
+*	RETURNVAL		- Délka zašifrovaného pole
+*/
 int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 	unsigned char *iv, unsigned char *ciphertext){
 
@@ -35,6 +44,15 @@ int encrypt(unsigned char *plaintext, int plaintext_len, unsigned char *key,
 	return ciphertext_len;
 }
 
+/*
+*	Funkce na dešifrování zašifrovaného pole
+*	ciphertext 		- Ukazatel na zdrojové pole
+*	ciphertext_len	- Délka zdrojového textu
+*	key				- Klíč na dešifrování
+*	iv				- Startovací vektor pro dešifrování
+*	plaintext 		- Ukazatel na výsledné rozšifrované pole
+*	RETURNVAL		- Délka rozšifrovaného pole
+*/
 int decrypt(unsigned char *ciphertext, int ciphertext_len, unsigned char *key,
 	unsigned char *iv, unsigned char *plaintext){
 

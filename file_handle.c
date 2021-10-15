@@ -2,29 +2,35 @@
 #include <stdio.h>
 #include <string.h>
 
-char* read_file_as_byte_array(char* filename){
+/*
+* Funkce na načtení libovolného souboru jako bajtového pole - nezávislé na příponě
+*/
+char* read_file_as_byte_array(char* filename, int *payload_len){
 
-	FILE *fileptr;
-	char *buffer;
-	long filelen;
+	FILE *fileptr;	// Soubor
+	char *buffer;	// cílové pole
+	long filelen;	// délka načteného pole
 
 	fileptr = fopen(filename, "rb");
 	if(fileptr == NULL){
 		perror("Error opening file!");
 		exit(EXIT_FAILURE);
 	}
-	fseek(fileptr, 0, SEEK_END);
-	filelen = ftell(fileptr);
-	rewind(fileptr);
+	fseek(fileptr, 0, SEEK_END);	// Nalezení konce souboru
+	filelen = ftell(fileptr);		// Výpočet délky souboru
+	rewind(fileptr);				// Vrácení ukazatele na začátek souboru
 
 	buffer = (char *)malloc(filelen * sizeof(char));
-	fread(buffer, filelen, 1, fileptr);
+	fread(buffer, filelen, 1, fileptr);	// Načtení souboru
+	*payload_len = filelen; 
 	fclose(fileptr);
-
 	return buffer;
 
 }
 
+/*
+* Funkce na zapsání bajtového pole do souboru
+*/
 void write_file_as_byte_array(char* filename, unsigned char* src, int src_len){
 
 	FILE *fileptr;

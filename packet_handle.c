@@ -78,6 +78,7 @@ void random_char_array_gen(unsigned char *buff, int size){
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int mode, int src_len, unsigned char *iv_in){
 
+
 	// Creating key
 	unsigned char key[KEY_SIZE];
 	memset(key, 0, sizeof(key));
@@ -106,27 +107,29 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	return 0;
 }
 
-void send_icmp_file(char *src, char *dst, char *payload, char *filename){
+void send_icmp_file(char *src, char *dst, char *payload,
+	char *filename, int payload_size){
 
 	unsigned char **buff;
 	int packet_count = 1;
 	int sock_id;
-	int payload_size = strlen(payload);
 	int last_size;
 	unsigned char unsigned_payload[payload_size];
-	unsigned char iv[IV_SIZE];
+	unsigned char iv[IV_SIZE];	
 	struct icmp_packet packet;
+
+	printf("%d\n", payload_size);
 
 	memcpy(unsigned_payload, payload, payload_size);
 	// Generate IV
 	random_char_array_gen(iv, IV_SIZE);
 
 	// Encrypt payload
-	unsigned char encrypted_buff[payload_size*3];
+	unsigned char encrypted_buff[payload_size*8];
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
-	
+
 	sock_id = open_icmp_socket();
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);

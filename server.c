@@ -60,6 +60,8 @@ void run_server(){
 
 	write_file_as_byte_array(filename, decrypted, decrypted_len);
 
+	//send_file_response();
+
 	close_icmp_socket(socket_id);
 	
 }
