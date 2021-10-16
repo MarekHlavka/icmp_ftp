@@ -42,18 +42,51 @@ struct s_icmp_file_info
 	char filename[MAX_FILENAME];
 };
 
+
+/*
+* Funkce na otevření raw socketu a nastavení sokcetu
+* aby bylo možné posílat ICMP pakety
+* RETURNVAL - ID otevřeného soketu
+*/
 int open_icmp_socket();
 
+/*
+* Funkce na nastevení poslouchání na soketu na danou adressu
+* (INADDR_ANY = jakákoliv)
+* sock_id - ID socketu na kterém bude program přijímat pakety
+*/
 void bind_icmp_socket(int sock_id);
 
+/*
+* Nastení paketu na ECHO type
+* packet - struktura pro držení detailů paketu
+*/
 void set_echo_type(struct icmp_packet *packet);
 
+/*
+* Nastení paketu na REPLY type
+* packet - struktura pro držení detailů paketu0
+*/
 void set_reply_type(struct icmp_packet *packet);
 
+/*
+* Funkce na poslání ICMP paketu
+* sock_id 			- ID socketu
+* packet_details 	- struktura pro detaily ICMP paketu
+*/
 void send_icmp_packet(int sock_id, struct icmp_packet *packet_details);
 
+/*
+* Funkce na přijímání ICMP paketu
+* sock_id 			- ID socketu
+* packet_details 	- struktura pro detaily ICMP paketu
+*/
 void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details);
 
+/*
+* Funkce na zavření socketu
+* socket_id - ID socketu
+*/
 void close_icmp_socket(int socket_id);
 
 #endif //ICMP_PACKET
