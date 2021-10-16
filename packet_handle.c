@@ -91,6 +91,7 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int decryptedtext_len, ciphertext_len;
 	if(mode == AES_ENCRYPT){
 		//Encrypt
+		// TODO malloc --------------------------------------------------------------	
 		unsigned char ciphertext[src_len*3];
 		ciphertext_len = encrypt(src_char, src_len, key, iv, ciphertext);
 		memcpy(dst_char, ciphertext, ciphertext_len);
@@ -98,6 +99,7 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	}
 	if(mode == AES_DECRYPT){
 		//Decrypt
+		// TODO malloc --------------------------------------------------------------
 		unsigned char decryptedtext[src_len*3];
 		decryptedtext_len = decrypt(src_char, src_len, key, iv, decryptedtext);
 		memcpy(dst_char, decryptedtext, decryptedtext_len);
@@ -125,6 +127,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	random_char_array_gen(iv, IV_SIZE);
 
 	// Encrypt payload
+	// TODO malloc --------------------------------------------------------------
 	unsigned char encrypted_buff[payload_size*8];
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 

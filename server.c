@@ -52,6 +52,7 @@ void run_server(){
 
 	unsigned char *merged_buff = NULL;
 	merged_buff = merge_payload(buff, packet_count, last_size);
+	// TODO malloc --------------------------------------------------------------
 	unsigned char decrypted[cipher_len*2];
 
 	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
