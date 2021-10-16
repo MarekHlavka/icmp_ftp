@@ -50,10 +50,8 @@ void run_server(){
 		}
 	}
 
-	unsigned char *merged_buff = NULL;
-	merged_buff = merge_payload(buff, packet_count, last_size);
-	// TODO malloc --------------------------------------------------------------
-	unsigned char decrypted[cipher_len*2];
+	unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
+	unsigned char *decrypted = (unsigned char *)malloc(cipher_len * 2 * sizeof(unsigned char));
 
 	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 
@@ -63,6 +61,8 @@ void run_server(){
 
 	//send_file_response();
 
+	free(decrypted);
+	free(merged_buff);
 	close_icmp_socket(socket_id);
 	
 }

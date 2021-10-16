@@ -39,7 +39,7 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 
 }
 
-unsigned char* merge_payload(unsigned char **source, int count, int last_size){
+unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 
 	int source_size = MAX_PYLD_SIZE;
 
@@ -51,10 +51,10 @@ unsigned char* merge_payload(unsigned char **source, int count, int last_size){
 			source_size = last_size;
 		}
 		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], source_size);
-		//free(source[i]);
+		free(source[i]);
 	}
 
-	//free(source);
+	free(source);
 
 	return buff;
 
@@ -91,18 +91,18 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int decryptedtext_len, ciphertext_len;
 	if(mode == AES_ENCRYPT){
 		//Encrypt
-		// TODO malloc --------------------------------------------------------------	
-		unsigned char ciphertext[src_len*3];
+		unsigned char *ciphertext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
 		ciphertext_len = encrypt(src_char, src_len, key, iv, ciphertext);
 		memcpy(dst_char, ciphertext, ciphertext_len);
+		free(ciphertext);
 		return ciphertext_len;
 	}
 	if(mode == AES_DECRYPT){
 		//Decrypt
-		// TODO malloc --------------------------------------------------------------
-		unsigned char decryptedtext[src_len*3];
+		unsigned char *decryptedtext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
 		decryptedtext_len = decrypt(src_char, src_len, key, iv, decryptedtext);
 		memcpy(dst_char, decryptedtext, decryptedtext_len);
+		free(decryptedtext);
 		return decryptedtext_len;
 
 	}
@@ -127,8 +127,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	random_char_array_gen(iv, IV_SIZE);
 
 	// Encrypt payload
-	// TODO malloc --------------------------------------------------------------
-	unsigned char encrypted_buff[payload_size*8];
+	unsigned char *encrypted_buff = (unsigned char *)malloc(payload_size*sizeof(unsigned char)*4);
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
@@ -163,7 +162,10 @@ void send_icmp_file(char *src, char *dst, char *payload,
 
 		send_icmp_packet(sock_id, &packet);
 
+		free(packet.payload);
+
 	}
+	free(encrypted_buff);
 	free_file_buff(buff, packet_count);
 	close_icmp_socket(sock_id);
 
