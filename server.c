@@ -1,5 +1,16 @@
 #include "server.h"
 
+void send_file_response(int sock_id, char *src, char *dst){
+
+	struct icmp_packet packet;
+
+	memcpy(packet.src_addr, src, strlen(src) + 1);
+	memcpy(packet.dest_addr, dst, strlen(dst) + 1);	
+
+	set_reply_type(&packet);
+
+}
+
 void run_server(){
 
 	struct icmp_packet packet;
@@ -14,14 +25,13 @@ void run_server(){
 	int cipher_len = 0;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
+	char clinet_addr[100];
+	char server_addr[100];
 
 	//printf("Server initialized...\n");
 	while(1){
 
 		recieve_icmp_packet(socket_id, &packet);
-		cipher_len = packet.cipher_len;
-		memcpy(iv, packet.iv, IV_SIZE);
-		memcpy(filename, packet.filename, MAX_FILENAME);
 
 		if(buff == NULL){
 			buff = (unsigned char **)malloc(packet.count * MAX_PYLD_SIZE * sizeof(unsigned char));
@@ -30,6 +40,11 @@ void run_server(){
 				close_icmp_socket(socket_id);
 				exit(-1);
 			}
+			cipher_len = packet.cipher_len;
+			memcpy(iv, packet.iv, IV_SIZE);
+			memcpy(filename, packet.filename, MAX_FILENAME);
+			memcpy(clinet_addr, packet.src_addr, strlen(packet.src_addr));
+			memcpy(server_addr, packet.dest_addr, strlen(packet.dest_addr));
 		}
 
 		buff[packet.order] = (unsigned char *)malloc(packet.part_size * sizeof(unsigned char));
@@ -61,8 +76,11 @@ void run_server(){
 
 	//send_file_response();
 
+	printf("CLINET: %s\nSERVER: %s\n", clinet_addr, server_addr);
+
 	free(decrypted);
 	free(merged_buff);
+
 	close_icmp_socket(socket_id);
 	
 }
