@@ -16,8 +16,8 @@ void send_file_response(int sock_id, char *src, char *dst, int order, int count)
 	packet.src_len = 0;
 	packet.payload = NULL;
 	// memset
-	packet.iv = NULL;
-	packet.filename = NULL;
+	memset(packet.iv, 0, IV_SIZE);
+	memset(packet.filename, 0, MAX_FILENAME);
 
 	send_icmp_packet(sock_id, &packet);
 
@@ -74,6 +74,9 @@ void run_server(){
 			last_size = packet.part_size;
 		}
 
+		send_file_response(socket_id, server_addr, clinet_addr, packet.order, packet.count);
+
+
 		if(packet.count == packet_count){
 			break;
 		}
@@ -87,14 +90,11 @@ void run_server(){
 		exit(-1);
 	}
 
-	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
+	//int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 
 	//decrypted[strlen((char *)decrypted)] = '\0';
 
-	write_file_as_byte_array(filename, decrypted, decrypted_len);
-
-	//send_file_response();
-
+	//write_file_as_byte_array(filename, decrypted, decrypted_len);
 	printf("CLINET: %s\nSERVER: %s\n", clinet_addr, server_addr);
 
 	free(decrypted);
