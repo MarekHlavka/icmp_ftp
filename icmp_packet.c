@@ -121,6 +121,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_file->cipher_len = packet_details->cipher_len;	// Délka celkové šifry
 	icmp_file->count = packet_details->count;						// Počet posílaných paketů
 	icmp_file->part_size = packet_details->part_size;		// Velikost nákladu aktuálnícho paketu
+	icmp_file->src_len = packet_details->src_len;				// Délka originálního souboru
 
 	// Kopírování nečíselných položek
 	memcpy(icmp_payload, packet_details->payload, packet_details->part_size);
@@ -188,6 +189,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	packet_details->cipher_len = icmp_file->cipher_len;
 	packet_details->count = icmp_file->count;
 	packet_details->part_size = icmp_file->part_size;
+	packet_details->src_len = icmp_file->src_len;
 
 	// Alokování místo pro zbytek dat, kromě hlaviček
 	packet_details->payload = calloc(packet_details->part_size, sizeof(uint8_t));

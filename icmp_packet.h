@@ -11,9 +11,11 @@
 #define MTU 			1480
 #define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info) - 58)
 #define MAX_FILENAME 	32
-#define KEY 		"xhlavk09"
-#define KEY_SIZE 	32
-#define IV_SIZE		KEY_SIZE/2
+#define KEY 			"xhlavk09"
+#define KEY_SIZE 		32
+#define IV_SIZE			KEY_SIZE/2
+
+#define OK_REPLY		10
 
 struct icmp_packet
 {
@@ -27,6 +29,7 @@ struct icmp_packet
 	int cipher_len;
 	int count;
 	int part_size;
+	int src_len;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };
@@ -38,6 +41,7 @@ struct s_icmp_file_info
 	int cipher_len;
 	int count;
 	int part_size;
+	int src_len;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };

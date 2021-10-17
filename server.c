@@ -1,13 +1,25 @@
 #include "server.h"
 
-void send_file_response(int sock_id, char *src, char *dst){
+void send_file_response(int sock_id, char *src, char *dst, int order, int count){
 
 	struct icmp_packet packet;
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);	
-
 	set_reply_type(&packet);
+
+	packet.file_type = OK_REPLY;
+	packet.order = order;
+	packet.count = count;
+	packet.cipher_len = 0;
+	packet.part_size = 0;
+	packet.src_len = 0;
+	packet.payload = NULL;
+	// memset
+	packet.iv = NULL;
+	packet.filename = NULL;
+
+	send_icmp_packet(sock_id, &packet);
 
 }
 
@@ -23,6 +35,7 @@ void run_server(){
 	int packet_count = 0;
 	int last_size = 0;
 	int cipher_len = 0;
+	int original_size = 0;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 	char clinet_addr[100];
@@ -41,6 +54,7 @@ void run_server(){
 				exit(-1);
 			}
 			cipher_len = packet.cipher_len;
+			original_size = packet.src_len;
 			memcpy(iv, packet.iv, IV_SIZE);
 			memcpy(filename, packet.filename, MAX_FILENAME);
 			memcpy(clinet_addr, packet.src_addr, strlen(packet.src_addr));
@@ -66,7 +80,12 @@ void run_server(){
 	}
 
 	unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
-	unsigned char *decrypted = (unsigned char *)malloc(cipher_len * 2 * sizeof(unsigned char));
+	unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char));
+	if(decrypted == NULL){
+		perror("No memory available 1\n");
+		close_icmp_socket(socket_id);
+		exit(-1);
+	}
 
 	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 

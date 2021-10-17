@@ -92,6 +92,10 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	if(mode == AES_ENCRYPT){
 		//Encrypt
 		unsigned char *ciphertext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
+		if(ciphertext == NULL){
+			perror("No memory available 1\n");
+			exit(-1);
+		}
 		ciphertext_len = encrypt(src_char, src_len, key, iv, ciphertext);
 		memcpy(dst_char, ciphertext, ciphertext_len);
 		free(ciphertext);
@@ -100,6 +104,10 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	if(mode == AES_DECRYPT){
 		//Decrypt
 		unsigned char *decryptedtext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
+		if(decryptedtext == NULL){
+			perror("No memory available 1\n");
+			exit(-1);
+		}
 		decryptedtext_len = decrypt(src_char, src_len, key, iv, decryptedtext);
 		memcpy(dst_char, decryptedtext, decryptedtext_len);
 		free(decryptedtext);
@@ -128,6 +136,10 @@ void send_icmp_file(char *src, char *dst, char *payload,
 
 	// Encrypt payload
 	unsigned char *encrypted_buff = (unsigned char *)malloc(payload_size*sizeof(unsigned char)*4);
+	if(encrypted_buff == NULL){
+		perror("No memory available 1\n");
+		exit(-1);
+	}
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
@@ -141,6 +153,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	packet.file_type = 1;
 	packet.cipher_len = encrypt_size;
 	packet.count = packet_count;
+	packet.src_len = payload_size;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
 
