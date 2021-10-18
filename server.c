@@ -14,12 +14,15 @@ void send_file_response(int sock_id, char *src, char *dst, int order, int count)
 	packet.cipher_len = 0;
 	packet.part_size = 0;
 	packet.src_len = 0;
-	packet.payload = NULL;
+	packet.payload = (unsigned char *)malloc(10 * sizeof(unsigned char *));
+	packet.payload_size = 10;
+	memcpy(packet.payload, "OK", 2);
 	// memset
 	memset(packet.iv, 0, IV_SIZE);
 	memset(packet.filename, 0, MAX_FILENAME);
 
 	send_icmp_packet(sock_id, &packet);
+	free(packet.payload);
 
 }
 
@@ -38,13 +41,16 @@ void run_server(){
 	int original_size = 0;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
-	char clinet_addr[100];
-	char server_addr[100];
 
 	//printf("Server initialized...\n");
 	while(1){
 
-		recieve_icmp_packet(socket_id, &packet);
+
+		do{
+			recieve_icmp_packet(socket_id, &packet);
+		}while(packet.file_type != FILE_MV);
+
+
 
 		if(buff == NULL){
 			buff = (unsigned char **)malloc(packet.count * MAX_PYLD_SIZE * sizeof(unsigned char));
@@ -57,8 +63,6 @@ void run_server(){
 			original_size = packet.src_len;
 			memcpy(iv, packet.iv, IV_SIZE);
 			memcpy(filename, packet.filename, MAX_FILENAME);
-			memcpy(clinet_addr, packet.src_addr, strlen(packet.src_addr));
-			memcpy(server_addr, packet.dest_addr, strlen(packet.dest_addr));
 		}
 
 		buff[packet.order] = (unsigned char *)malloc(packet.part_size * sizeof(unsigned char));
@@ -74,7 +78,8 @@ void run_server(){
 			last_size = packet.part_size;
 		}
 
-		send_file_response(socket_id, server_addr, clinet_addr, packet.order, packet.count);
+		printf("Sending packet\n");
+		send_file_response(socket_id, packet.dest_addr, packet.src_addr, packet.order, packet.count);
 
 
 		if(packet.count == packet_count){
@@ -82,8 +87,14 @@ void run_server(){
 		}
 	}
 
+	printf("%d\n", original_size);
+
 	unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
 	unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char));
+
+	DEBUG
+	
+
 	if(decrypted == NULL){
 		perror("No memory available 1\n");
 		close_icmp_socket(socket_id);
@@ -95,8 +106,6 @@ void run_server(){
 	//decrypted[strlen((char *)decrypted)] = '\0';
 
 	//write_file_as_byte_array(filename, decrypted, decrypted_len);
-	printf("CLINET: %s\nSERVER: %s\n", clinet_addr, server_addr);
-
 	free(decrypted);
 	free(merged_buff);
 

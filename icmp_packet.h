@@ -16,6 +16,7 @@
 #define IV_SIZE			KEY_SIZE/2
 
 #define OK_REPLY		10
+#define FILE_MV			1
 
 struct icmp_packet
 {

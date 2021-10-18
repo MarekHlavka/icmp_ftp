@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
  int *count, int *last_size){
@@ -127,6 +128,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	unsigned char unsigned_payload[payload_size];
 	unsigned char iv[IV_SIZE];	
 	struct icmp_packet packet;
+	struct icmp_packet rcvr_packet;
 
 	printf("%d\n", payload_size);
 
@@ -150,7 +152,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
 
 	set_echo_type(&packet);
-	packet.file_type = 1;
+	packet.file_type = FILE_MV;
 	packet.cipher_len = encrypt_size;
 	packet.count = packet_count;
 	packet.src_len = payload_size;
@@ -173,7 +175,16 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		packet.part_size = packet_size;
 		packet.order = i;
 
+		printf("Sending packet\n");
 		send_icmp_packet(sock_id, &packet);
+
+		do{
+			recieve_icmp_packet(sock_id, &rcvr_packet);
+			printf("client recieved: %d\n", rcvr_packet.file_type);
+		}while(rcvr_packet.file_type != OK_REPLY);
+		sleep(1);
+
+
 
 		free(packet.payload);
 

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #include <openssl/conf.h>
 #include <openssl/evp.h>
@@ -133,8 +134,15 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	// Nastevení detailů struktury pro uchovávání adresy
 	servaddr.sin_family = AF_INET;
 	servaddr.sin_addr.s_addr = dest_addr.s_addr;	
-	sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
+	int retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
+	printf("%d\n", retval);
+	if(retval == -1){
+
+		printf("Socket error %d\n", errno);
+
+	}
+
 	free(packet);
 }
 
@@ -190,6 +198,8 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	packet_details->count = icmp_file->count;
 	packet_details->part_size = icmp_file->part_size;
 	packet_details->src_len = icmp_file->src_len;
+
+	printf("Recieved packet seq: %d\n%d\n", icmp->un.echo.sequence, packet_details->file_type);
 
 	// Alokování místo pro zbytek dat, kromě hlaviček
 	packet_details->payload = calloc(packet_details->part_size, sizeof(uint8_t));
@@ -254,13 +264,13 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp){
 	ip->version = 4;	
 	ip->ihl = 5;
 	ip->tos = 0;
-	ip->id = rand();
+	ip->id = 7;
 	ip->frag_off = 0;
 	ip->ttl = 255;
 	ip->protocol = IPPROTO_ICMP;
 
 	icmp->code = 0;
-	icmp->un.echo.sequence = rand();
-	icmp->un.echo.id = rand();
+	icmp->un.echo.sequence = 69;
+	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
 }
