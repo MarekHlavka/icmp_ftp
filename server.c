@@ -1,6 +1,7 @@
 #include "server.h"
 
-void send_file_response(int sock_id, char *src, char *dst, int order, int count){
+void send_file_response(int sock_id, char *src, char *dst, int order,
+	int count, int seq){
 
 	struct icmp_packet packet;
 
@@ -14,6 +15,7 @@ void send_file_response(int sock_id, char *src, char *dst, int order, int count)
 	packet.cipher_len = 0;
 	packet.part_size = 0;
 	packet.src_len = 0;
+	packet.seq = seq;
 	packet.payload = (unsigned char *)malloc(10 * sizeof(unsigned char *));
 	packet.payload_size = 10;
 	memcpy(packet.payload, "OK", 2);
@@ -78,8 +80,9 @@ void run_server(){
 			last_size = packet.part_size;
 		}
 
-		printf("Sending packet\n");
-		send_file_response(socket_id, packet.dest_addr, packet.src_addr, packet.order, packet.count);
+		printf("Sending packet seq: %d\n", packet.seq);
+		send_file_response(socket_id, packet.dest_addr, packet.src_addr,
+			packet.order, packet.count, packet.seq);
 
 
 		if(packet.count == packet_count){
@@ -90,9 +93,8 @@ void run_server(){
 	printf("%d\n", original_size);
 
 	unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
-	unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char));
-
-	DEBUG
+	unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char) * 4);
+	unsigned char *original = (unsigned char *)malloc(original_size * sizeof(unsigned char));
 	
 
 	if(decrypted == NULL){
@@ -101,11 +103,14 @@ void run_server(){
 		exit(-1);
 	}
 
-	//int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
+	int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
+	memcpy(original, decrypted, original_size);
 
-	//decrypted[strlen((char *)decrypted)] = '\0';
+	printf("%d\n", decrypted_len);
 
-	//write_file_as_byte_array(filename, decrypted, decrypted_len);
+	write_file_as_byte_array(filename, original, original_size);
+
+	free(original);
 	free(decrypted);
 	free(merged_buff);
 

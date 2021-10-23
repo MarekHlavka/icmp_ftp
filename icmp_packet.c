@@ -15,7 +15,7 @@
 
 uint16_t in_cksum(uint16_t *addr, int len);
 
-void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp);
+void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
 /*
 * Dunkce na otevření raw socketu a nastavení sokcetu
@@ -104,7 +104,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
 
 	// Vyplnění nepotřebbných položek IP a ICMP hlaviček
-	prepare_hdr(ip, icmp);
+	prepare_hdr(ip, icmp, packet_details->seq);
 
 	// Vyplnění IP hlavičky
 	ip->tot_len = htons(packet_size);		// Délka
@@ -191,6 +191,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	// Ukládání položek z jednotlivých hlaviček do struktury
 	// pro jednodušší přístup
 	packet_details->type = icmp->type;
+	packet_details->seq = icmp->un.echo.sequence;
 	packet_details->payload_size = packet_size - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info);
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
@@ -198,8 +199,6 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	packet_details->count = icmp_file->count;
 	packet_details->part_size = icmp_file->part_size;
 	packet_details->src_len = icmp_file->src_len;
-
-	printf("Recieved packet seq: %d\n%d\n", icmp->un.echo.sequence, packet_details->file_type);
 
 	// Alokování místo pro zbytek dat, kromě hlaviček
 	packet_details->payload = calloc(packet_details->part_size, sizeof(uint8_t));
@@ -259,7 +258,7 @@ uint16_t in_cksum(uint16_t *addr, int len)
   return answer;
 }
 
-void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp){
+void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	
 	ip->version = 4;	
 	ip->ihl = 5;
@@ -270,7 +269,7 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp){
 	ip->protocol = IPPROTO_ICMP;
 
 	icmp->code = 0;
-	icmp->un.echo.sequence = 69;
+	icmp->un.echo.sequence = seq;
 	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
 }

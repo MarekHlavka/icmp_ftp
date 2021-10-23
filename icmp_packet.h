@@ -31,6 +31,7 @@ struct icmp_packet
 	int count;
 	int part_size;
 	int src_len;
+	int seq;
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 };

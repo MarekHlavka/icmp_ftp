@@ -104,7 +104,7 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	}
 	if(mode == AES_DECRYPT){
 		//Decrypt
-		unsigned char *decryptedtext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
+		unsigned char *decryptedtext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 2);
 		if(decryptedtext == NULL){
 			perror("No memory available 1\n");
 			exit(-1);
@@ -156,6 +156,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	packet.cipher_len = encrypt_size;
 	packet.count = packet_count;
 	packet.src_len = payload_size;
+	packet.seq = 0;
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
 
@@ -175,16 +176,15 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		packet.part_size = packet_size;
 		packet.order = i;
 
-		printf("Sending packet\n");
+		printf("Sending packet %d\n", packet.seq);
 		send_icmp_packet(sock_id, &packet);
 
 		do{
 			recieve_icmp_packet(sock_id, &rcvr_packet);
-			printf("client recieved: %d\n", rcvr_packet.file_type);
-		}while(rcvr_packet.file_type != OK_REPLY);
-		sleep(1);
+		}while(rcvr_packet.file_type != OK_REPLY && packet.seq == rcvr_packet.seq);
 
-
+		packet.seq++;
+		// sleep(1);
 
 		free(packet.payload);
 
