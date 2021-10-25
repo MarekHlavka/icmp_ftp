@@ -1,10 +1,36 @@
 #include "client.h"
 #include <netdb.h>
 #include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <netdb.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
 
 #define MAX_ADDR_LEN	256
 
-void address_lookup(){}
+int address_lookup(char *dst){
+
+	struct addrinfo hints, *result;
+	int retval;
+
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = PF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags |= AI_CANONNAME;
+
+	retval = getaddrinfo(host, NULL, &hints, &result);
+	if(retval != 0){
+		perror("Resolving provided destination");
+		return -1;
+	}
+
+	while(result){
+		
+	}
+
+}
 
 void run_client(char *address, char *src_filename){
 
