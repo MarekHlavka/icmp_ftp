@@ -4,6 +4,8 @@
 
 #define MAX_ADDR_LEN	256
 
+void address_lookup(){}
+
 void run_client(char *address, char *src_filename){
 
 	char *payload;
