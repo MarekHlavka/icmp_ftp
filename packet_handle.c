@@ -119,7 +119,7 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 }
 
 void send_icmp_file(char *src, char *dst, char *payload,
-	char *filename, int payload_size){
+	char *filename, int payload_size, int version){
 
 	unsigned char **buff;
 	int packet_count = 1;

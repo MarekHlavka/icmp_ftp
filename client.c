@@ -9,52 +9,66 @@
 
 #define MAX_ADDR_LEN	256
 
-int address_lookup(char *dst){
-	char buf[128];
-    if (inet_pton(AF_INET, dst, buf)) {
-        return 4;
-    } else if (inet_pton(AF_INET6, dst, buf)) {
-        return 6;
-    }
-    return -1;
+int lookup_host (const char *host, char* dst)
+{
+  struct addrinfo hints, *res, *result;
+  int errcode;
+  char addrstr[MAX_ADDR_LEN];
+  void *ptr;
+  int ip_ver;
 
+  memset (&hints, 0, sizeof (hints));
+  hints.ai_family = PF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_flags |= AI_CANONNAME;
+
+  errcode = getaddrinfo (host, NULL, &hints, &result);
+  if (errcode != 0)
+    {
+      perror ("getaddrinfo");
+      return -1;
+    }
+  
+  res = result;
+  inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, MAX_ADDR_LEN);
+
+  ip_ver = res->ai_family;
+  switch (ip_ver)
+    {
+    case AF_INET:
+      ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+      break;
+    case AF_INET6:
+      ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
+      break;
+    }
+  inet_ntop (res->ai_family, ptr, addrstr, MAX_ADDR_LEN);
+  memcpy(dst, addrstr, MAX_ADDR_LEN);
+  freeaddrinfo(result);
+
+  return ip_ver;
 }
 
 void run_client(char *address, char *src_filename){
 
 	char *payload;
+	char dest[MAX_ADDR_LEN];
 	char src_ip[MAX_ADDR_LEN];
-	char dst_ip[MAX_ADDR_LEN];
 	int payload_len;
 
-	int ip_version = address_lookup(address);
+	int ip_version = lookup_host(address, dest);
 	if(ip_version == -1){
 		perror("Wrong address format");
 		exit(-1);
 	}
-	if(ip_version == 4){
-
-		struct hostent *dst_hstmn;
-		struct hostent *src_hstmn;
-
-		dst_hstmn = gethostbyname(address);
-		if(dst_hstmn == NULL){
-			perror("Unknown hostname");
-			exit(-1);
-		}
-		strcpy(dst_ip, inet_ntoa(*((struct in_addr*)dst_hstmn->h_addr_list[0])));
-		src_hstmn = gethostbyname("0.0.0.0");
-		strcpy(src_ip, inet_ntoa(*((struct in_addr*)src_hstmn->h_addr_list[0])));
+	
+	if(ip_version == AF_INET){
+		strcpy(src_ip, "0.0.0.0");
 	}
 	else{
-
-		struct addrinfo *res = NULL;
-		getaddrinfo(address, NULL, NULL, &res);
+		strcpy(src_ip, "::");		
 	}
-	
-
 	payload = read_file_as_byte_array(src_filename, &payload_len);
-
-	//send_icmp_file(src_ip, dst_ip, payload, src_filename, payload_len);
+	send_icmp_file(src_ip, dest, payload, src_filename, payload_len, ip_version);
 
 }

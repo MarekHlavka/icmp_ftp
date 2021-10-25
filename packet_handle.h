@@ -16,6 +16,6 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int mode, int src_len, unsigned char *iv_in);
 
 void send_icmp_file(char *src, char *dst, char *payload,
-	char *filename, int payload_size);
+	char *filename, int payload_size, int version);
 
 #endif //PACKET_HANDLE
