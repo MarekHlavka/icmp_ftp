@@ -83,6 +83,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	struct sockaddr_in servaddr;
 
 	// Konverze IP adres
+	// TODO: ZDE určení IP nebo IPv6 -----------------------------------
 	inet_pton(AF_INET, packet_details->src_addr, &src_addr);
 	inet_pton(AF_INET, packet_details->dest_addr, &dest_addr);
 
@@ -110,6 +111,8 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	ip->tot_len = htons(packet_size);		// Délka
 	ip->saddr = src_addr.s_addr;				// Zdrojová IP
 	ip->daddr = dest_addr.s_addr;				// Cílová IP
+
+	// Až sem  bude diference mezi IP a IPv6 -------------------------------------
 
 	// Vyplnění ICMP hlavičky
 	icmp->type = packet_details->type;	// typ echo-request/reply

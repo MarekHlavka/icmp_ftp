@@ -18,6 +18,7 @@ void run_client(char *address, char *src_filename){
 	dst_hstmn = gethostbyname(address);
 	strcpy(dst_ip, inet_ntoa(*((struct in_addr*)dst_hstmn->h_addr_list[0])));
 
+	// possible change
 	src_hstmn = gethostbyname("0.0.0.0");
 	strcpy(src_ip, inet_ntoa(*((struct in_addr*)src_hstmn->h_addr_list[0])));
 
