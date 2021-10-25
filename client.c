@@ -68,7 +68,7 @@ void run_client(char *address, char *src_filename){
 	else{
 		strcpy(src_ip, "::");		
 	}
-	payload = read_file_as_byte_array(src_filename, &payload_len);
+  payload = read_file_as_byte_array(src_filename, &payload_len);
 	send_icmp_file(src_ip, dest, payload, src_filename, payload_len, ip_version);
 
 }
