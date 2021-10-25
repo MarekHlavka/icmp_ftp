@@ -35,7 +35,7 @@ int main(int argc, char** argv){
 	int argument;
 	bool file_flag, ip_flag, server_flag = false;
 	char filename[256];
-	char address[64];
+	char address[128];
 
 
 	while((argument = getopt(argc, argv, ":r:s:l")) != -1){
