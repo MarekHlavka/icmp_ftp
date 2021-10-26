@@ -21,21 +21,33 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 * Dunkce na otevření raw socketu a nastavení sokcetu
 * aby bylo možné posílat ICMP pakety
 */
-int open_icmp_socket()
+int open_icmp_socket(int version)
 {
 
 	int sock_id, opt = 1;
+	if(version == 4){	// IPv4
+		sock_id = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
+		if(sock_id == -1){													// Kontrola otevření soketu
+			perror("Unable to open ICMP socket");
+			exit(EXIT_FAILURE);
+		}
 
-	sock_id = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP);
-	if(sock_id == -1){													// Kontrola otevření soketu
-		perror("Unable to open ICMP socket\n");
-		exit(EXIT_FAILURE);
+		// Nastavení soketu
+		if(setsockopt(sock_id, IPPROTO_IP, IP_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
+			perror("Unable to set IP_HDRINCL socket option");
+			exit(EXIT_FAILURE);
+		}
 	}
+	else{	// IPv6
+		sock_id = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
+		if(sock_id == -1){
+			perror("Unable to open ICMPv6 socket");
+			exit(EXIT_FAILURE);
+		}
 
-	// Nastavení soketu
-	if(setsockopt(sock_id, IPPROTO_IP, IP_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
-		perror("Unable to set IP_HDRINCL socket option\n");
-		exit(EXIT_FAILURE);
+		if(setsockopt(sock_id, IPPROTO_IPV6, IPV6_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
+			perror("Unable to set IPV6_HDRINCL socket option");
+		}
 	}
 
 	return sock_id;
@@ -52,8 +64,8 @@ void bind_icmp_socket(int sock_id)
 
 	// Nastavení detailů pro přijímaní na socketu
 	memset(&servaddr, 0, sizeof(struct sockaddr_in));
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_family = AF_UNSPEC;
+	// servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
 	// Samotné nastavení socketu
 	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) == -1)
@@ -67,51 +79,85 @@ void bind_icmp_socket(int sock_id)
 /*
 * Funkce na poslání ICMP paketu
 */
-void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
+void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version)
 {
 
-	struct in_addr src_addr;						// IP adresa zdroje
-	struct in_addr dest_addr;						// IP adresa cíle
-	struct iphdr *ip;										// struktura IP hlavičky
-	struct icmphdr *icmp;								// struktura ICMP hlavičky
-	struct s_icmp_file_info *icmp_file;	// struktura ICMP_file hlavičky
+	struct icmphdr *icmp;						// struktura ICMP hlavičky
+	struct s_icmp_file_info *icmp_file;			// struktura ICMP_file hlavičky
 	unsigned char *icmp_payload;				// ukazatel na začítek přenášených dat
-
-	int packet_size;		// Velikost pro alokování paměti pro paket
-	char *packet;				// Ukazatel na místo alokované pro paket
+	int packet_size;							// Velikost pro alokování paměti pro paket
+	char *packet;								// Ukazatel na místo alokované pro paket
 
 	struct sockaddr_in servaddr;
 
+	printf("%s\n%s\n", packet_details->src_addr, packet_details->dest_addr);
+
 	// Konverze IP adres
-	// TODO: ZDE určení IP nebo IPv6 -----------------------------------
-	inet_pton(AF_INET, packet_details->src_addr, &src_addr);
-	inet_pton(AF_INET, packet_details->dest_addr, &dest_addr);
+	if(version == 4){	// IPv4 ---------------------------------------------------------------------
 
-	// Výpočet velikosti paketu
-	packet_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
+		struct iphdr *ip;							// struktura IP hlavičky
+		struct in_addr src_addr;					// IP adresa zdroje
+		struct in_addr dest_addr;					// IP adresa cíle
 
-	// Alokování paketu
-	packet = calloc(packet_size, sizeof(uint8_t));
-	if(packet == NULL){
-		perror("No memory available\n");
-		close_icmp_socket(sock_id);
-		exit(EXIT_FAILURE);
+		printf("%d\n", inet_pton(AF_INET, packet_details->src_addr, &src_addr));
+		printf("%d\n", inet_pton(AF_INET, packet_details->dest_addr, &dest_addr));
+
+		// Výpočet velikosti paketu
+		packet_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
+
+		// Alokování paketu
+		packet = calloc(packet_size, sizeof(uint8_t));
+		if(packet == NULL){
+			perror("No memory available");
+			close_icmp_socket(sock_id);
+			exit(EXIT_FAILURE);
+		}
+
+		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
+		ip = (struct iphdr *)packet;
+		icmp = (struct icmphdr*)(packet + sizeof(struct iphdr));
+		icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr)); 
+		icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+
+		// Vyplnění nepotřebbných položek IP a ICMP hlaviček
+		prepare_hdr(ip, icmp, packet_details->seq);
+
+		// Vyplnění IP hlavičky
+		printf("%d\n%d\n", src_addr.s_addr, dest_addr.s_addr);
+		ip->tot_len = htons(packet_size);			// Délka
+		ip->saddr = src_addr.s_addr;				// Zdrojová IP
+		ip->daddr = dest_addr.s_addr;				// Cílová IP
+
+		// Nastevení detailů struktury pro uchovávání adresy
+		memset(&servaddr, 0, sizeof(struct sockaddr_in));
+		servaddr.sin_family = AF_INET;
+		servaddr.sin_addr.s_addr = dest_addr.s_addr;
+
 	}
+	else{		// IPv6 ------------------------------------------------------------------------------
 
-	// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
-	ip = (struct iphdr *)packet;
-	icmp = (struct icmphdr*)(packet + sizeof(struct iphdr));
-	icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr)); 
-	icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+		struct ip6_hdr *ip6;
+		struct in6_addr src_addr;
+		struct in6_addr dest_addr;
 
-	// Vyplnění nepotřebbných položek IP a ICMP hlaviček
-	prepare_hdr(ip, icmp, packet_details->seq);
+		printf("%d\n", inet_pton(AF_INET6, packet_details->src_addr, &src_addr));
+		printf("%d\n", inet_pton(AF_INET6, packet_details->dest_addr, &dest_addr));
 
-	// Vyplnění IP hlavičky
-	ip->tot_len = htons(packet_size);		// Délka
-	ip->saddr = src_addr.s_addr;				// Zdrojová IP
-	ip->daddr = dest_addr.s_addr;				// Cílová IP
+		packet_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
 
+		packet = calloc(packet_size, sizeof(uint8_t));
+		if(packet == NULL){
+			perror("No memory available");
+			close_icmp_socket(sock_id);
+			exit(EXIT_FAILURE);
+		}
+
+		ip6 = (struct ip6_hdr *)packet;
+		icmp = (struct icmphdr*)(packet + sizeof(struct ip6_hdr));
+		icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr)); 
+		icmp_payload = (unsigned char *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+
+	}
 	// Až sem  bude diference mezi IP a IPv6 -------------------------------------
 
 	// Vyplnění ICMP hlavičky
@@ -132,17 +178,13 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
-	memset(&servaddr, 0, sizeof(struct sockaddr_in));
-	
-	// Nastevení detailů struktury pro uchovávání adresy
-	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = dest_addr.s_addr;	
 	int retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	
 	printf("%d\n", retval);
 	if(retval == -1){
 
 		printf("Socket error %d\n", errno);
+		exit(EXIT_FAILURE);
 
 	}
 
@@ -277,4 +319,6 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	icmp->checksum = 0;
 }
 
-void prepare_hdr_6(){}
+void prepare_hdr_6(struct ip6_hdr *ip6, struct icmphdr *icmp, int seq){
+	
+}

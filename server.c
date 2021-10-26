@@ -1,7 +1,7 @@
 #include "server.h"
 
 void send_file_response(int sock_id, char *src, char *dst, int order,
-	int count, int seq){
+	int count, int seq, int version){
 
 	struct icmp_packet packet;
 
@@ -23,7 +23,7 @@ void send_file_response(int sock_id, char *src, char *dst, int order,
 	memset(packet.iv, 0, IV_SIZE);
 	memset(packet.filename, 0, MAX_FILENAME);
 
-	send_icmp_packet(sock_id, &packet);
+	send_icmp_packet(sock_id, &packet, version);
 	free(packet.payload);
 
 }
@@ -33,7 +33,7 @@ void run_server(){
 	struct icmp_packet packet;
 	int socket_id;
 
-	socket_id = open_icmp_socket();
+	socket_id = open_icmp_socket(4);
 	bind_icmp_socket(socket_id);
 
 	unsigned char **buff = NULL;
@@ -82,7 +82,7 @@ void run_server(){
 
 		printf("Sending packet seq: %d\n", packet.seq);
 		send_file_response(socket_id, packet.dest_addr, packet.src_addr,
-			packet.order, packet.count, packet.seq);
+			packet.order, packet.count, packet.seq, 6);
 
 
 		if(packet.count == packet_count){

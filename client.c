@@ -31,15 +31,15 @@ int lookup_host (const char *host, char* dst)
   
   res = result;
   inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, MAX_ADDR_LEN);
-
-  ip_ver = res->ai_family;
-  switch (ip_ver)
+  switch (res->ai_family)
     {
     case AF_INET:
       ptr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+      ip_ver = 4;
       break;
     case AF_INET6:
       ptr = &((struct sockaddr_in6 *) res->ai_addr)->sin6_addr;
+      ip_ver = 6;
       break;
     }
   inet_ntop (res->ai_family, ptr, addrstr, MAX_ADDR_LEN);
@@ -57,12 +57,13 @@ void run_client(char *address, char *src_filename){
 	int payload_len;
 
 	int ip_version = lookup_host(address, dest);
+  printf("%d\n", ip_version);
 	if(ip_version == -1){
 		perror("Wrong address format");
 		exit(-1);
 	}
-	
-	if(ip_version == AF_INET){
+  printf("%s\n", dest);
+	if(ip_version == 4){
 		strcpy(src_ip, "0.0.0.0");
 	}
 	else{

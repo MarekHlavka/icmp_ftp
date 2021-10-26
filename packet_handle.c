@@ -146,7 +146,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
 
-	sock_id = open_icmp_socket();
+	sock_id = open_icmp_socket(version);
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -177,7 +177,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		packet.order = i;
 
 		printf("Sending packet %d\n", packet.seq);
-		send_icmp_packet(sock_id, &packet);
+		send_icmp_packet(sock_id, &packet, version);
 
 		do{
 			recieve_icmp_packet(sock_id, &rcvr_packet);

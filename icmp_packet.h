@@ -6,7 +6,9 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/ip_icmp.h>
+#include <netinet/icmp6.h>
 
 #define MTU 			1480
 #define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info) - 58)
@@ -14,6 +16,7 @@
 #define KEY 			"xhlavk09"
 #define KEY_SIZE 		32
 #define IV_SIZE			KEY_SIZE/2
+#define IPV6_HDRINCL	36
 
 #define OK_REPLY		10
 #define FILE_MV			1
@@ -54,7 +57,7 @@ struct s_icmp_file_info
 * aby bylo možné posílat ICMP pakety
 * RETURNVAL - ID otevřeného soketu
 */
-int open_icmp_socket();
+int open_icmp_socket(int version);
 
 /*
 * Funkce na nastevení poslouchání na soketu na danou adressu
@@ -80,7 +83,7 @@ void set_reply_type(struct icmp_packet *packet);
 * sock_id 			- ID socketu
 * packet_details 	- struktura pro detaily ICMP paketu
 */
-void send_icmp_packet(int sock_id, struct icmp_packet *packet_details);
+void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version);
 
 /*
 * Funkce na přijímání ICMP paketu
