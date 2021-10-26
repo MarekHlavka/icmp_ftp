@@ -276,3 +276,5 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
 }
+
+void prepare_hdr_6(){}
