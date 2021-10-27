@@ -17,6 +17,8 @@ uint16_t in_cksum(uint16_t *addr, int len);
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
+void prepare_icmp(struct icmphdr *icmp, int seq);
+
 /*
 * Dunkce na otevření raw socketu a nastavení sokcetu
 * aby bylo možné posílat ICMP pakety
@@ -82,6 +84,8 @@ void bind_icmp_socket(int sock_id)
 void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version)
 {
 
+	struct iphdr *ip;							// struktura IP hlavičky
+	struct ip6_hdr *ip6;
 	struct icmphdr *icmp;						// struktura ICMP hlavičky
 	struct s_icmp_file_info *icmp_file;			// struktura ICMP_file hlavičky
 	unsigned char *icmp_payload;				// ukazatel na začítek přenášených dat
@@ -89,13 +93,13 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 	char *packet;								// Ukazatel na místo alokované pro paket
 
 	struct sockaddr_in servaddr;
+	struct sockaddr_in6 servaddr6;
 
 	printf("%s\n%s\n", packet_details->src_addr, packet_details->dest_addr);
 
 	// Konverze IP adres
 	if(version == 4){	// IPv4 ---------------------------------------------------------------------
 
-		struct iphdr *ip;							// struktura IP hlavičky
 		struct in_addr src_addr;					// IP adresa zdroje
 		struct in_addr dest_addr;					// IP adresa cíle
 
@@ -123,7 +127,6 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 		prepare_hdr(ip, icmp, packet_details->seq);
 
 		// Vyplnění IP hlavičky
-		printf("%d\n%d\n", src_addr.s_addr, dest_addr.s_addr);
 		ip->tot_len = htons(packet_size);			// Délka
 		ip->saddr = src_addr.s_addr;				// Zdrojová IP
 		ip->daddr = dest_addr.s_addr;				// Cílová IP
@@ -135,13 +138,6 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 
 	}
 	else{		// IPv6 ------------------------------------------------------------------------------
-
-		struct ip6_hdr *ip6;
-		struct in6_addr src_addr;
-		struct in6_addr dest_addr;
-
-		printf("%d\n", inet_pton(AF_INET6, packet_details->src_addr, &src_addr));
-		printf("%d\n", inet_pton(AF_INET6, packet_details->dest_addr, &dest_addr));
 
 		packet_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
 
@@ -156,6 +152,24 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 		icmp = (struct icmphdr*)(packet + sizeof(struct ip6_hdr));
 		icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr)); 
 		icmp_payload = (unsigned char *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+
+		prepare_icmp(icmp, packet_details->seq);
+
+		ip6->ip6_flow = packet_details->seq;
+		ip6->ip6_hlim = 255;
+		ip6->ip6_nxt = IPPROTO_ICMPV6;
+		ip6->ip6_plen = htons(packet_details->payload_size);
+
+		printf("%d\n", inet_pton(AF_INET6, packet_details->src_addr, &(ip6->ip6_src)));
+		printf("%d\n", inet_pton(AF_INET6, packet_details->dest_addr, &(ip6->ip6_dst)));
+
+		memset(&servaddr6, 0, sizeof(struct sockaddr_in6));
+		servaddr6.sin6_family = AF_INET6;
+		servaddr6.sin6_addr = ip6->ip6_dst;
+
+		ip6->ip6_vfc = 0x60;
+		printf("%d\n", ip6->ip6_vfc);
+
 
 	}
 	// Až sem  bude diference mezi IP a IPv6 -------------------------------------
@@ -178,8 +192,13 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
-	int retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
-	
+	int retval = 0;
+	if(version == 4){
+		retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
+	}
+	else{
+		retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr6, sizeof(struct sockaddr_in6));
+	}
 	printf("%d\n", retval);
 	if(retval == -1){
 
@@ -261,8 +280,8 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
 	free(packet);
 }
 
-void set_echo_type(struct icmp_packet *packet){
-	packet->type = ICMP_ECHO;
+void set_echo_type(struct icmp_packet *packet, int version){
+	packet->type = (version == 4)?ICMP_ECHO:ICMP6_ECHO_REQUEST;
 }
 
 void set_reply_type(struct icmp_packet *packet){
@@ -308,17 +327,18 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	ip->version = 4;	
 	ip->ihl = 5;
 	ip->tos = 0;
-	ip->id = 7;
+	ip->id = seq;
 	ip->frag_off = 0;
 	ip->ttl = 255;
 	ip->protocol = IPPROTO_ICMP;
+
+	prepare_icmp(icmp, seq);
+}
+
+void prepare_icmp(struct icmphdr *icmp, int seq){
 
 	icmp->code = 0;
 	icmp->un.echo.sequence = seq;
 	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
-}
-
-void prepare_hdr_6(struct ip6_hdr *ip6, struct icmphdr *icmp, int seq){
-	
 }

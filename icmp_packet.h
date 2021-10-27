@@ -70,7 +70,7 @@ void bind_icmp_socket(int sock_id);
 * Nastení paketu na ECHO type
 * packet - struktura pro držení detailů paketu
 */
-void set_echo_type(struct icmp_packet *packet);
+void set_echo_type(struct icmp_packet *packet, int version);
 
 /*
 * Nastení paketu na REPLY type

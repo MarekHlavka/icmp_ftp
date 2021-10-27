@@ -151,7 +151,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
 
-	set_echo_type(&packet);
+	set_echo_type(&packet, version);
 	packet.file_type = FILE_MV;
 	packet.cipher_len = encrypt_size;
 	packet.count = packet_count;
