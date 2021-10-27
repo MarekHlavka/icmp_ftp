@@ -228,18 +228,17 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 /*
 * Funkce na přijímání ICMP paketu
 */
-void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int verison)
+void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version)
 {
 
 	// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 
-	struct sockaddr_in src_addr;
-	struct iphdr *ip;								// IP hlavička
 	struct icmphdr *icmp;							// ICMP hlavička
 	struct s_icmp_file_info *icmp_file;				// ICMP_file hlavička
 	unsigned char *icmp_payload;					// Ukazatel na náklad paketu
 
 	int packet_size;
+	int header_size;
 	char *packet;
 
 	socklen_t src_addr_size;
@@ -252,26 +251,45 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		exit(-1);
 	}
 
-	src_addr_size = sizeof(struct sockaddr_in);
+	// IPv4 -------------------------------------------------------------------------------
+	if(version == 4){
 
-	// Přijímání paketu
-	packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
 
-	// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
-	ip = (struct iphdr *)packet;
-	icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
-	icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
-	icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+		struct sockaddr_in src_addr;
+		struct iphdr *ip;								// IP hlavička
 
-	// Konverze IP adres
-	inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
-	inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
+		src_addr_size = sizeof(struct sockaddr_in);
+		header_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info);
+
+		// Přijímání paketu
+		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+
+		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
+		ip = (struct iphdr *)packet;
+		icmp = (struct icmphdr *)(packet + sizeof(struct iphdr));
+		icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr));
+		icmp_payload = (unsigned char *)(packet + sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));
+
+		// Konverze IP adres
+		inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
+		inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
+
+	}
+	// IPv6 ---------------------------------------------------------------------------------
+	else{
+
+		struct sockaddr_in6 src_addr;
+		struct ip6_hdr *ip6;
+
+		src_addr_size = sizeof(struct sockaddr_in6);
+		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info);
+	}
 
 	// Ukládání položek z jednotlivých hlaviček do struktury
 	// pro jednodušší přístup
 	packet_details->type = icmp->type;
 	packet_details->seq = icmp->un.echo.sequence;
-	packet_details->payload_size = packet_size - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info);
+	packet_details->payload_size = packet_size - header_size;
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
 	packet_details->cipher_len = icmp_file->cipher_len;
