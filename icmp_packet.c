@@ -283,6 +283,18 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 
 		src_addr_size = sizeof(struct sockaddr_in6);
 		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info);
+
+		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+
+		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
+		ip6 = (struct ip6_hdr *)packet;
+		icmp = (struct icmphdr *)(packet + sizeof(struct ip6_hdr));
+		icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr));
+		icmp_payload = (unsigned char *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info));		
+
+		// Konverze IP adres
+		inet_ntop(AF_INET6, &(ip6->ip6_src), packet_details->src_addr, INET6_ADDRSTRLEN);
+		inet_ntop(AF_INET6, &(ip6->ip6_dst), packet_details->dest_addr, INET6_ADDRSTRLEN);
 	}
 
 	// Ukládání položek z jednotlivých hlaviček do struktury

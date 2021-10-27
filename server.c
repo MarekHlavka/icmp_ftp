@@ -1,6 +1,6 @@
 #include "server.h"
 
-#define VER 4
+#define VER 6
 
 void send_file_response(int sock_id, char *src, char *dst, int order,
 	int count, int seq, int version){
@@ -51,9 +51,11 @@ void run_server(){
 	// Server for IPv4 -----------------------------------------------------------------
 	while(1){
 
+		printf("Listening......\n");
 		// Listening for first packet of FTP ------------------------
 		do{
 			recieve_icmp_packet(socket_id, &packet, VER);
+			printf("Recieved...\n");
 		}while(packet.file_type != FILE_MV);
 
 		printf("Recieved valid packet\n");
