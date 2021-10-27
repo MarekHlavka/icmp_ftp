@@ -49,6 +49,7 @@ int open_icmp_socket(int version)
 
 		if(setsockopt(sock_id, IPPROTO_IPV6, IPV6_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
 			perror("Unable to set IPV6_HDRINCL socket option");
+			exit(EXIT_FAILURE);
 		}
 	}
 
@@ -59,22 +60,36 @@ int open_icmp_socket(int version)
 * Funkce na nastevení poslouchání na soketu na danou adressu
 * (INADDR_ANY = jakákoliv)
 */
-void bind_icmp_socket(int sock_id)
+void bind_icmp_socket(int sock_id, int version)
 {
+	if(version == 4){
 
-	struct sockaddr_in servaddr;
+		struct sockaddr_in servaddr;
+		// Nastavení detailů pro přijímaní na socketu
+		memset(&servaddr, 0, sizeof(struct sockaddr_in));
+		servaddr.sin_family = AF_INET;
+		servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-	// Nastavení detailů pro přijímaní na socketu
-	memset(&servaddr, 0, sizeof(struct sockaddr_in));
-	servaddr.sin_family = AF_UNSPEC;
-	// servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+		// Samotné nastavení socketu
+		if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) == -1)
+		{
+			perror("Unable to bind IPv4 socket");
+			exit(EXIT_FAILURE);
 
-	// Samotné nastavení socketu
-	if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in)) == -1)
-	{
-		perror("Unable to bind\n");
-		exit(EXIT_FAILURE);
+		}
+	}
+	else{
 
+		struct sockaddr_in6 servaddr;
+		memset(&servaddr, 0, sizeof(struct sockaddr_in6));
+		servaddr.sin6_family = AF_INET6;
+		servaddr.sin6_addr = in6addr_any;
+
+		if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in6)) == -1)
+		{
+			perror("Unable to bind IPv6 socket");
+			exit(EXIT_FAILURE);
+		}
 	}
 }
 
@@ -213,15 +228,15 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 /*
 * Funkce na přijímání ICMP paketu
 */
-void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details)
+void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int verison)
 {
 
-	struct sockaddr_in src_addr;
-	//struct sockaddr_in dest_addr;
+	// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
 
-	struct iphdr *ip;											// IP hlavička
-	struct icmphdr *icmp;									// ICMP hlavička
-	struct s_icmp_file_info *icmp_file;		// ICMP_file hlavička
+	struct sockaddr_in src_addr;
+	struct iphdr *ip;								// IP hlavička
+	struct icmphdr *icmp;							// ICMP hlavička
+	struct s_icmp_file_info *icmp_file;				// ICMP_file hlavička
 	unsigned char *icmp_payload;					// Ukazatel na náklad paketu
 
 	int packet_size;
@@ -284,8 +299,8 @@ void set_echo_type(struct icmp_packet *packet, int version){
 	packet->type = (version == 4)?ICMP_ECHO:ICMP6_ECHO_REQUEST;
 }
 
-void set_reply_type(struct icmp_packet *packet){
-	packet->type = ICMP_ECHOREPLY;
+void set_reply_type(struct icmp_packet *packet, int version){
+	packet->type = (version == 4)?ICMP_ECHOREPLY:ICMP6_ECHO_REPLY;
 }
 
 /*

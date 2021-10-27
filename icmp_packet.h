@@ -64,7 +64,7 @@ int open_icmp_socket(int version);
 * (INADDR_ANY = jakákoliv)
 * sock_id - ID socketu na kterém bude program přijímat pakety
 */
-void bind_icmp_socket(int sock_id);
+void bind_icmp_socket(int sock_id, int version);
 
 /*
 * Nastení paketu na ECHO type
@@ -76,7 +76,7 @@ void set_echo_type(struct icmp_packet *packet, int version);
 * Nastení paketu na REPLY type
 * packet - struktura pro držení detailů paketu0
 */
-void set_reply_type(struct icmp_packet *packet);
+void set_reply_type(struct icmp_packet *packet, int version);
 
 /*
 * Funkce na poslání ICMP paketu
@@ -90,7 +90,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 * sock_id 			- ID socketu
 * packet_details 	- struktura pro detaily ICMP paketu
 */
-void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details);
+void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version);
 
 /*
 * Funkce na zavření socketu

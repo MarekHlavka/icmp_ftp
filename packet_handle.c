@@ -52,11 +52,7 @@ unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 			source_size = last_size;
 		}
 		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], source_size);
-		free(source[i]);
 	}
-
-	free(source);
-
 	return buff;
 
 }
@@ -180,7 +176,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		send_icmp_packet(sock_id, &packet, version);
 
 		do{
-			recieve_icmp_packet(sock_id, &rcvr_packet);
+			recieve_icmp_packet(sock_id, &rcvr_packet, version);
 		}while(rcvr_packet.file_type != OK_REPLY && packet.seq == rcvr_packet.seq);
 
 		packet.seq++;
