@@ -35,8 +35,8 @@ void run_server(){
 	struct icmp_packet packet;
 	int socket_id;
 
-	socket_id = open_icmp_socket(4);
-	bind_icmp_socket(socket_id, 4);
+	socket_id = open_icmp_socket(VER);
+	bind_icmp_socket(socket_id, VER);
 
 	// DOUBLE VARS FOR BOTH THREADS
 

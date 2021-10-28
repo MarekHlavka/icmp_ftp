@@ -40,7 +40,7 @@ int open_icmp_socket(int version)
 			exit(EXIT_FAILURE);
 		}
 	}
-	else{	// IPv6
+	else{
 		sock_id = socket(AF_INET6, SOCK_RAW, IPPROTO_ICMPV6);
 		if(sock_id == -1){
 			perror("Unable to open ICMPv6 socket");
@@ -80,12 +80,14 @@ void bind_icmp_socket(int sock_id, int version)
 	}
 	else{
 
+		DEBUG
+
 		struct sockaddr_in6 servaddr;
 		memset(&servaddr, 0, sizeof(struct sockaddr_in6));
 		servaddr.sin6_family = AF_INET6;
-		servaddr.sin6_addr = in6addr_any;
+		servaddr.sin6_port = htons(0);
 
-		if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in6)) == -1)
+		if(bind(sock_id, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
 		{
 			perror("Unable to bind IPv6 socket");
 			exit(EXIT_FAILURE);
@@ -274,6 +276,11 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		inet_ntop(AF_INET, &(ip->saddr), packet_details->src_addr, INET_ADDRSTRLEN);
 		inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
 
+		if(ip->protocol != IPPROTO_ICMP){
+			packet_details->file_type = 0;
+			return;
+		}
+
 	}
 	// IPv6 ---------------------------------------------------------------------------------
 	else{
@@ -284,7 +291,15 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		src_addr_size = sizeof(struct sockaddr_in6);
 		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info);
 
+		DEBUG
 		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+		if(packet_size < 0){
+			printf("Server error: %d\n", errno);
+			perror("Reading packet");
+			exit(EXIT_FAILURE);
+		}
+
+		DEBUG
 
 		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
 		ip6 = (struct ip6_hdr *)packet;
@@ -295,6 +310,11 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		// Konverze IP adres
 		inet_ntop(AF_INET6, &(ip6->ip6_src), packet_details->src_addr, INET6_ADDRSTRLEN);
 		inet_ntop(AF_INET6, &(ip6->ip6_dst), packet_details->dest_addr, INET6_ADDRSTRLEN);
+
+		if(ip6->ip6_nxt != IPPROTO_ICMPV6){
+			packet_details->file_type = 0;
+			return;
+		}
 	}
 
 	// Ukládání položek z jednotlivých hlaviček do struktury
@@ -317,9 +337,17 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		exit(-1);
 	}
 
+	DEBUG
+
 	// Kopírování nečíselných položek
 	memcpy(packet_details->payload, icmp_payload, packet_details->part_size);
+
+	DEBUG
+
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
+
+	DEBUG
+
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
 
 	free(packet);
