@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <openssl/conf.h>
 #include <openssl/evp.h>
@@ -13,7 +14,7 @@
 
 #define DEBUG printf("Hello %d\n", __LINE__);
 
-uint16_t in_cksum(uint16_t *addr, int len);
+uint16_t in_cksum(uint16_t *addr, int len, int version);
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
@@ -194,8 +195,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 	// Vyplnění ICMP hlavičky
 	icmp->type = packet_details->type;	// typ echo-request/reply
 	icmp->checksum = 0;
-	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + packet_details->payload_size);
-	
+
 	// Vyplnění ICMP_file hlavičky
 	icmp_file->type = packet_details->file_type;				// Typ paketu
 	icmp_file->order = packet_details->order;						// Pořadí paketu
@@ -208,6 +208,8 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 	memcpy(icmp_payload, packet_details->payload, packet_details->part_size);
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
+
+	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size, version);
 
 	int retval = 0;
 	if(version == 4){
@@ -368,32 +370,60 @@ void close_icmp_socket(int sock_id){
 	close(sock_id);
 }
 
-uint16_t in_cksum(uint16_t *addr, int len)
-{
-  int nleft = len;
-  uint32_t sum = 0;
-  uint16_t *w = addr;
-  uint16_t answer = 0;
+uint16_t in_cksum(uint16_t *addr, int len, int version)
+{	
+	//len = len;
 
-  // Adding 16 bits sequentially in sum
-  while (nleft > 1) {
-    sum += *w;
-    nleft -= 2;
-    w++;
-  }
+	assert(len >= 0);
+	printf("%d\n", len - sizeof(struct icmphdr));
+	
+	uint16_t ret = 0;
+	uint32_t sum = 0;
+	uint16_t odd_byte;
+	
+	while (len > 1) {
+		sum += *addr++;
+		len -= 2;
+	}
+	
+	if (len == 1) {
+		*(uint8_t*)(&odd_byte) = * (uint8_t*)addr;
+		sum += odd_byte;
+	}
+	
+	sum =  (sum >> 16) + (sum & 0xffff);
+	sum += (sum >> 16);
+	ret =  ~sum;
+	
+	printf("CHECKSUM:    %x\n", ret);
 
-  // If an odd byte is left
-  if (nleft == 1) {
-    *(unsigned char *) (&answer) = *(unsigned char *) w;
-    sum += answer;
-  }
+	return ret; 
+	/*
+	int count = len;
+	int checksum = 0;
+	register long sum = 0;
 
-  sum = (sum >> 16) + (sum & 0xffff);
-  sum += (sum >> 16);
-  answer = ~sum;
+    while( count > 1 )  {
+        
+        sum += * (unsigned short *) addr++;
+        count -= 2;
+    }
 
-  return answer;
+    
+    if( count > 0 ){
+    	sum += * (unsigned char *) addr;
+    }
+        
+    while (sum>>16){
+   		sum = (sum & 0xffff) + (sum >> 16);
+    }
+
+    checksum = ~sum;
+    printf("CHECKSUM:    %x\n", checksum);
+    return checksum;
+    */
 }
+
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	
