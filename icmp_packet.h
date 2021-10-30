@@ -17,6 +17,7 @@
 #define KEY_SIZE 		32
 #define IV_SIZE			KEY_SIZE/2
 #define IPV6_HDRINCL	36
+#define PSEU_HDR_LEN	40
 
 #define OK_REPLY		10
 #define FILE_MV			1

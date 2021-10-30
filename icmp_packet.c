@@ -14,7 +14,9 @@
 
 #define DEBUG printf("Hello %d\n", __LINE__);
 
-uint16_t in_cksum(uint16_t *addr, int len, int version);
+uint16_t in_cksum(uint16_t *addr, int len);
+
+uint16_t in6_cksum(struct ip6_hdr *ip6, uint16_t *payload, int payload_size);
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
@@ -186,8 +188,6 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 		servaddr6.sin6_addr = ip6->ip6_dst;
 
 		ip6->ip6_vfc = 0x60;
-		printf("%d\n", ip6->ip6_vfc);
-
 
 	}
 	// Až sem  bude diference mezi IP a IPv6 -------------------------------------
@@ -209,14 +209,20 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
-	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size, version);
+
+	printf("PYLD size:%d\n", sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
 
 	int retval = 0;
 	if(version == 4){
+		icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
 		retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
 	}
 	else{
+		icmp->checksum = in6_cksum(ip6, (unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
 		retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr6, sizeof(struct sockaddr_in6));
+
+		DEBUG
+
 	}
 	printf("%d\n", retval);
 	if(retval == -1){
@@ -370,12 +376,11 @@ void close_icmp_socket(int sock_id){
 	close(sock_id);
 }
 
-uint16_t in_cksum(uint16_t *addr, int len, int version)
+uint16_t in_cksum(uint16_t *addr, int len)
 {	
-	//len = len;
 
+	printf("LEN = %d\n", len);
 	assert(len >= 0);
-	printf("%d\n", len - sizeof(struct icmphdr));
 	
 	uint16_t ret = 0;
 	uint32_t sum = 0;
@@ -398,30 +403,125 @@ uint16_t in_cksum(uint16_t *addr, int len, int version)
 	printf("CHECKSUM:    %x\n", ret);
 
 	return ret; 
-	/*
-	int count = len;
-	int checksum = 0;
-	register long sum = 0;
+}
 
-    while( count > 1 )  {
-        
-        sum += * (unsigned short *) addr++;
-        count -= 2;
-    }
+uint16_t in6_cksum(struct ip6_hdr *ip6, uint16_t *payload, int payload_size){
 
-    
-    if( count > 0 ){
-    	sum += * (unsigned char *) addr;
-    }
-        
-    while (sum>>16){
-   		sum = (sum & 0xffff) + (sum >> 16);
-    }
+	uint8_t *pseu_hdr = (uint8_t *)malloc(PSEU_HDR_LEN * sizeof(uint8_t));
 
-    checksum = ~sum;
-    printf("CHECKSUM:    %x\n", checksum);
-    return checksum;
-    */
+	memset(pseu_hdr, 0, PSEU_HDR_LEN);
+
+	uint8_t *src_addr = pseu_hdr;
+	uint8_t *dst_addr = pseu_hdr + 16;
+	uint8_t *icmpv6_len = pseu_hdr + 32;
+	uint8_t *nxt_hdr = pseu_hdr + 39;
+	
+	memcpy(src_addr, (const char *)ip6->ip6_src.s6_addr, sizeof(ip6->ip6_src.s6_addr));
+	memcpy(dst_addr, (const char *)ip6->ip6_dst.s6_addr, sizeof(ip6->ip6_dst.s6_addr));
+
+	*icmpv6_len = payload_size / 256;
+	icmpv6_len++;
+	*icmpv6_len = payload_size % 256;
+
+	*nxt_hdr = IPPROTO_ICMPV6 % 256;
+
+	BIO_dump_fp(stdout, (const char *)pseu_hdr, PSEU_HDR_LEN);
+
+	uint8_t *cksum_buff = (uint8_t *)malloc((PSEU_HDR_LEN + payload_size) * sizeof(uint8_t));
+	memset(cksum_buff, 0, PSEU_HDR_LEN + payload_size);
+	memcpy(cksum_buff, pseu_hdr, PSEU_HDR_LEN);
+	memcpy(cksum_buff + PSEU_HDR_LEN, payload, payload_size);
+
+	printf("%d + %d = %d\n", PSEU_HDR_LEN, payload_size, PSEU_HDR_LEN + payload_size);
+	
+	BIO_dump_fp(stdout, (const char *)cksum_buff, PSEU_HDR_LEN + payload_size);
+
+	uint16_t icmpv6_cksum = in_cksum((uint16_t *)cksum_buff, PSEU_HDR_LEN + payload_size);
+	free(cksum_buff);
+	free(pseu_hdr);
+	return icmpv6_cksum;
+}
+
+uint16_t
+icmp6_checksum (struct ip6_hdr iphdr, struct icmp6_hdr icmp6hdr, uint8_t *payload, int payloadlen) {
+
+  char buf[IP_MAXPACKET];
+  char *ptr;
+  int chksumlen = 0;
+  int i;
+
+  ptr = &buf[0];  // ptr points to beginning of buffer buf
+
+  // Copy source IP address into buf (128 bits)
+  memcpy (ptr, &iphdr.ip6_src.s6_addr, sizeof (iphdr.ip6_src.s6_addr));
+  ptr += sizeof (iphdr.ip6_src);
+  chksumlen += sizeof (iphdr.ip6_src);
+
+  // Copy destination IP address into buf (128 bits)
+  memcpy (ptr, &iphdr.ip6_dst.s6_addr, sizeof (iphdr.ip6_dst.s6_addr));
+  ptr += sizeof (iphdr.ip6_dst.s6_addr);
+  chksumlen += sizeof (iphdr.ip6_dst.s6_addr);
+
+  // Copy Upper Layer Packet length into buf (32 bits).
+  // Should not be greater than 65535 (i.e., 2 bytes).
+  *ptr = 0; ptr++;
+  *ptr = 0; ptr++;
+  *ptr = (ICMP_HDRLEN + payloadlen) / 256;
+  ptr++;
+  *ptr = (ICMP_HDRLEN + payloadlen) % 256;
+  ptr++;
+  chksumlen += 4;
+
+  // Copy zero field to buf (24 bits)
+  *ptr = 0; ptr++;
+  *ptr = 0; ptr++;
+  *ptr = 0; ptr++;
+  chksumlen += 3;
+
+  // Copy next header field to buf (8 bits)
+  memcpy (ptr, &iphdr.ip6_nxt, sizeof (iphdr.ip6_nxt));
+  ptr += sizeof (iphdr.ip6_nxt);
+  chksumlen += sizeof (iphdr.ip6_nxt);
+
+  // Copy ICMPv6 type to buf (8 bits)
+  memcpy (ptr, &icmp6hdr.icmp6_type, sizeof (icmp6hdr.icmp6_type));
+  ptr += sizeof (icmp6hdr.icmp6_type);
+  chksumlen += sizeof (icmp6hdr.icmp6_type);
+
+  // Copy ICMPv6 code to buf (8 bits)
+  memcpy (ptr, &icmp6hdr.icmp6_code, sizeof (icmp6hdr.icmp6_code));
+  ptr += sizeof (icmp6hdr.icmp6_code);
+  chksumlen += sizeof (icmp6hdr.icmp6_code);
+
+  // Copy ICMPv6 ID to buf (16 bits)
+  memcpy (ptr, &icmp6hdr.icmp6_id, sizeof (icmp6hdr.icmp6_id));
+  ptr += sizeof (icmp6hdr.icmp6_id);
+  chksumlen += sizeof (icmp6hdr.icmp6_id);
+
+  // Copy ICMPv6 sequence number to buff (16 bits)
+  memcpy (ptr, &icmp6hdr.icmp6_seq, sizeof (icmp6hdr.icmp6_seq));
+  ptr += sizeof (icmp6hdr.icmp6_seq);
+  chksumlen += sizeof (icmp6hdr.icmp6_seq);
+
+  // Copy ICMPv6 checksum to buf (16 bits)
+  // Zero, since we don't know it yet.
+  *ptr = 0; ptr++;
+  *ptr = 0; ptr++;
+  chksumlen += 2;
+
+  // Copy ICMPv6 payload to buf
+  memcpy (ptr, payload, payloadlen * sizeof (uint8_t));
+  ptr += payloadlen;
+  chksumlen += payloadlen;
+
+  // Pad to the next 16-bit boundary
+  for (i=0; i<payloadlen%2; i++, ptr++) {
+    *ptr = 0;
+    ptr += 1;
+    chksumlen += 1;
+  }
+
+  return in_cksum ((uint16_t *) buf, chksumlen);
 }
 
 
