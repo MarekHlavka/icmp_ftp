@@ -21,6 +21,7 @@
 
 #define OK_REPLY		10
 #define FILE_MV			1
+#define HOP_LIMIT		239
 
 struct icmp_packet
 {
@@ -58,7 +59,7 @@ struct s_icmp_file_info
 * aby bylo možné posílat ICMP pakety
 * RETURNVAL - ID otevřeného soketu
 */
-int open_icmp_socket(int version);
+int open_icmp_socket(int version, int server);
 
 /*
 * Funkce na nastevení poslouchání na soketu na danou adressu

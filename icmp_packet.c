@@ -26,7 +26,7 @@ void prepare_icmp(struct icmp6_hdr *icmp, int seq);
 * Dunkce na otevření raw socketu a nastavení sokcetu
 * aby bylo možné posílat ICMP pakety
 */
-int open_icmp_socket(int version)
+int open_icmp_socket(int version, int server)
 {
 
 	int sock_id, opt = 1;
@@ -49,10 +49,17 @@ int open_icmp_socket(int version)
 			perror("Unable to open ICMPv6 socket");
 			exit(EXIT_FAILURE);
 		}
-
-		if(setsockopt(sock_id, IPPROTO_IPV6, IPV6_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
-			perror("Unable to set IPV6_HDRINCL socket option");
-			exit(EXIT_FAILURE);
+		if(server == 0){
+			if(setsockopt(sock_id, IPPROTO_IPV6, IPV6_HDRINCL, (const char *)&opt, sizeof(opt)) == -1){
+				perror("Unable to set IPV6_HDRINCL socket option");
+				exit(EXIT_FAILURE);
+			}
+		}
+		else{
+			if(setsockopt(sock_id, IPPROTO_IPV6, IPV6_RECVPKTINFO, (const char *)&opt, sizeof(opt)) == -1){
+				perror("Unable to set IPV6_HDRINCL socket option");
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -162,7 +169,9 @@ void send_icmp4_packet(int sock_id, struct icmp_packet *packet_details){
 
 	int retval = 0;
 	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
+	printf("Sended checksum: %x ------------------------\n", icmp->checksum);
 	retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
+	printf("Sended: %d\n", retval);
 
 	printf("%d\n", retval);
 	if(retval == -1){
@@ -182,7 +191,6 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	int packet_size;												// Velikost pro alokování paměti pro paket
 	char *packet;														// Ukazatel na místo alokované pro paket
 
-	printf("v4: %d ||v6: %d\n", sizeof(struct icmphdr), sizeof(struct icmp6_hdr));
 	packet_size = sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
 
 	packet = calloc(packet_size, sizeof(uint8_t));
@@ -200,7 +208,7 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	prepare_icmp(icmp, packet_details->seq);
 
 	ip6->ip6_flow = packet_details->seq;
-	ip6->ip6_hlim = 255;
+	ip6->ip6_hlim = HOP_LIMIT;
 	ip6->ip6_nxt = IPPROTO_ICMPV6;
 	ip6->ip6_plen = htons(packet_details->payload_size + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));
 
@@ -231,10 +239,14 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
+	printf("-------------------------------------------\n");
+	BIO_dump_fp (stdout, (const char *)ip6, sizeof(struct ip6_hdr));
+	printf("-------------------------------------------\n");
+
 	int retval = 0;
 	icmp->icmp6_cksum = in6_cksum(ip6, (unsigned short *)icmp, sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
 	retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr6, sizeof(struct sockaddr_in6));
-	printf("%d\n", retval);
+	printf("Sended: %d\n", retval);
 	if(retval == -1){
 		printf("Socket error %d\n", errno);
 		exit(EXIT_FAILURE);
@@ -293,6 +305,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 
 		// Přijímání paketu
 		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+		printf("Recieved: %d\n", packet_size);
 
 		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
 		ip = (struct iphdr *)packet;
@@ -305,8 +318,11 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		inet_ntop(AF_INET, &(ip->daddr), packet_details->dest_addr, INET_ADDRSTRLEN);
 
 		packet_details->type = icmp->type;
+		packet_details->seq = icmp->un.echo.sequence;
 
-		if(ip->protocol != IPPROTO_ICMP){
+		printf("Recieved checksum: %x ------------------------\n", icmp->checksum);
+
+		if(ip->ttl != HOP_LIMIT){
 			packet_details->file_type = 0;
 			return;
 		}
@@ -320,15 +336,27 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		struct ip6_hdr *ip6;
 
 		src_addr_size = sizeof(struct sockaddr_in6);
-		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info);
+		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info);
 
 		DEBUG
 		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
+		printf("Recieved: %d\n", packet_size);
 		if(packet_size < 0){
 			printf("Server error: %d\n", errno);
 			perror("Reading packet");
 			exit(EXIT_FAILURE);
 		}
+
+		inet_ntop(AF_INET6, &(src_addr.sin6_addr), packet_details->src_addr, INET6_ADDRSTRLEN);
+		BIO_dump_fp(stdout, (const char *)&(src_addr.sin6_addr.s6_addr), 16);
+		printf("--------------------------------------------------------\n");
+		BIO_dump_fp(stdout, (const char *)&(packet_details->src_addr), sizeof(packet_details->src_addr));
+		printf("--------------------------------------------------------\n");
+		memset(&(src_addr.sin6_addr), 0, 16);
+		inet_pton(AF_INET6, packet_details->src_addr, &(src_addr.sin6_addr));
+		BIO_dump_fp(stdout, (const char *)&(src_addr.sin6_addr.s6_addr), 16);
+		printf("--------------------------------------------------------\n");
+		printf("--------------------------------------------------------\n");
 
 		DEBUG
 
@@ -343,16 +371,20 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		inet_ntop(AF_INET6, &(ip6->ip6_dst), packet_details->dest_addr, INET6_ADDRSTRLEN);
 
 		packet_details->type = icmp->icmp6_type;
+		packet_details->seq = icmp->icmp6_seq;
 
-		if(ip6->ip6_nxt != IPPROTO_ICMPV6){
+		BIO_dump_fp (stdout, (const char *)packet, sizeof(struct ip6_hdr));
+		BIO_dump_fp (stdout, (const char *)ip6, sizeof(struct ip6_hdr));
+
+		if(ip6->ip6_hlim != HOP_LIMIT){
 			packet_details->file_type = 0;
 			return;
 		}
+
 	}
 
 	// Ukládání položek z jednotlivých hlaviček do struktury
 	// pro jednodušší přístup
-	//packet_details->seq = icmp->un.echo.sequence;
 	packet_details->payload_size = packet_size - header_size;
 	packet_details->file_type = icmp_file->type;
 	packet_details->order = icmp_file->order;
@@ -368,19 +400,12 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		close_icmp_socket(sock_id);
 		exit(-1);
 	}
-
-	DEBUG
-
 	// Kopírování nečíselných položek
 	memcpy(packet_details->payload, icmp_payload, packet_details->part_size);
-
-	DEBUG
-
 	memcpy(packet_details->iv, icmp_file->iv, IV_SIZE);
-
-	DEBUG
-
 	memcpy(packet_details->filename, icmp_file->filename, MAX_FILENAME);
+
+	printf("Packet type: %d\n", packet_details->file_type);
 
 	free(packet);
 }
@@ -423,8 +448,6 @@ uint16_t in_cksum(uint16_t *addr, int len)
 	sum =  (sum >> 16) + (sum & 0xffff);
 	sum += (sum >> 16);
 	ret =  ~sum;
-	
-	printf("CHECKSUM:    %x\n", ret);
 
 	return ret; 
 }
@@ -449,16 +472,10 @@ uint16_t in6_cksum(struct ip6_hdr *ip6, uint16_t *payload, int payload_size){
 
 	*nxt_hdr = IPPROTO_ICMPV6 % 256;
 
-	BIO_dump_fp(stdout, (const char *)pseu_hdr, PSEU_HDR_LEN);
-
 	uint8_t *cksum_buff = (uint8_t *)malloc((PSEU_HDR_LEN + payload_size) * sizeof(uint8_t));
 	memset(cksum_buff, 0, PSEU_HDR_LEN + payload_size);
 	memcpy(cksum_buff, pseu_hdr, PSEU_HDR_LEN);
 	memcpy(cksum_buff + PSEU_HDR_LEN, payload, payload_size);
-
-	printf("%d + %d = %d\n", PSEU_HDR_LEN, payload_size, PSEU_HDR_LEN + payload_size);
-	
-	BIO_dump_fp(stdout, (const char *)cksum_buff, PSEU_HDR_LEN + payload_size);
 
 	uint16_t icmpv6_cksum = in_cksum((uint16_t *)cksum_buff, PSEU_HDR_LEN + payload_size);
 	free(cksum_buff);
@@ -473,10 +490,10 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	ip->tos = 0;
 	ip->id = seq;
 	ip->frag_off = 0;
-	ip->ttl = 255;
+	ip->ttl = HOP_LIMIT;
 	ip->protocol = IPPROTO_ICMP;
 
-	icmp->code = 0;
+	icmp->code = 69;
 	icmp->un.echo.sequence = seq;
 	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
@@ -485,6 +502,5 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 void prepare_icmp(struct icmp6_hdr *icmp, int seq){
 
 	icmp->icmp6_code = 0;
-	printf("%d\n", seq);
 	icmp->icmp6_cksum = 0;
 }

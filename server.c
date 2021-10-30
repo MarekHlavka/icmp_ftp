@@ -25,6 +25,7 @@ void send_file_response(int sock_id, char *src, char *dst, int order,
 	memset(packet.iv, 0, IV_SIZE);
 	memset(packet.filename, 0, MAX_FILENAME);
 
+	printf("Sending filetype: %d\n", packet.file_type);
 	send_icmp_packet(sock_id, &packet, version);
 	free(packet.payload);
 
@@ -35,7 +36,7 @@ void run_server(){
 	struct icmp_packet packet;
 	int socket_id;
 
-	socket_id = open_icmp_socket(VER);
+	socket_id = open_icmp_socket(VER, 1);
 	bind_icmp_socket(socket_id, VER);
 
 	// DOUBLE VARS FOR BOTH THREADS
@@ -55,7 +56,7 @@ void run_server(){
 		// Listening for first packet of FTP ------------------------
 		do{
 			recieve_icmp_packet(socket_id, &packet, VER);
-			printf("Recieved...\n");
+			printf("Recieved... %d\n", packet.file_type);
 		}while(packet.file_type != FILE_MV);
 
 		printf("Recieved valid packet\n");
@@ -77,9 +78,11 @@ void run_server(){
 		// Cycling through rest of the packet of this
 		while(1){
 
+			printf("Order: %d\n", packet.order);
+
 			buff[packet.order] = (unsigned char *)malloc(packet.part_size * sizeof(unsigned char));
 			if(buff[packet.order] == NULL){
-					perror("No memory available 2\n");
+					perror("No memory available \n");
 					close_icmp_socket(socket_id);
 					exit(-1);
 			}
@@ -101,22 +104,31 @@ void run_server(){
 			// MEMORY PROBLEMS ------------------------------------------------
 			do{
 				recieve_icmp_packet(socket_id, &packet, VER);
-			}while(packet.file_type != FILE_MV);
+				printf("Recieved... %d\n", packet.file_type);
+			}while(packet.file_type != FILE_MV && packet.type == (VER == 4? ICMP_ECHOREPLY:ICMP6_ECHO_REPLY));
 
 		}
 
 		printf("%d\n", original_size);
 
+		DEBUG
+
 		unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
+
+		DEBUG
+
 		unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char) * 4);
 		unsigned char *original = (unsigned char *)malloc(original_size * sizeof(unsigned char));
 		
+		DEBUG
 
 		if(decrypted == NULL){
 			perror("No memory available 1\n");
 			close_icmp_socket(socket_id);
 			exit(-1);
 		}
+
+		DEBUG
 
 		int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 		memcpy(original, decrypted, original_size);

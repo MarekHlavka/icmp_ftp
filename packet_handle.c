@@ -46,12 +46,15 @@ unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 
 	unsigned char *buff = (unsigned char *)malloc(((MAX_PYLD_SIZE * (count - 1) + last_size)) * sizeof(unsigned char));
 
-	for(int i = 0; i < count ; i++){
+	for(int i = 0; i < count; i++){
+
+		DEBUG
 
 		if(i == (count -1)){
 			source_size = last_size;
 		}
 		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], source_size);
+		DEBUG
 	}
 	return buff;
 
@@ -142,7 +145,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
 
-	sock_id = open_icmp_socket(version);
+	sock_id = open_icmp_socket(version, 0);
 
 	memcpy(packet.src_addr, src, strlen(src) + 1);
 	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
@@ -172,12 +175,12 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		packet.part_size = packet_size;
 		packet.order = i;
 
-		printf("Sending packet %d\n", packet.seq);
+		printf("Sending packet to client %d\n", packet.seq);
 		send_icmp_packet(sock_id, &packet, version);
 
 		do{
 			recieve_icmp_packet(sock_id, &rcvr_packet, version);
-		}while(rcvr_packet.file_type != OK_REPLY && packet.seq == rcvr_packet.seq);
+		}while(rcvr_packet.file_type != OK_REPLY&& packet.type == (version == 4?ICMP_ECHO:ICMP6_ECHO_REQUEST));
 
 		packet.seq++;
 		// sleep(1);
