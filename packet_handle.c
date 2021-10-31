@@ -127,7 +127,6 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	unsigned char unsigned_payload[payload_size];
 	unsigned char iv[IV_SIZE];	
 	struct icmp_packet packet;
-	struct icmp_packet rcvr_packet;
 
 	printf("%d\n", payload_size);
 
@@ -178,12 +177,8 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		printf("Sending packet to client %d\n", packet.seq);
 		send_icmp_packet(sock_id, &packet, version);
 
-		do{
-			recieve_icmp_packet(sock_id, &rcvr_packet, version);
-		}while(rcvr_packet.file_type != OK_REPLY&& packet.type == (version == 4?ICMP_ECHO:ICMP6_ECHO_REQUEST));
-
 		packet.seq++;
-		// sleep(1);
+		sleep(0.002);
 
 		free(packet.payload);
 

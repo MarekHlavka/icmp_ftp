@@ -226,6 +226,8 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	icmp->icmp6_id = htons(256);
 	icmp->icmp6_seq = packet_details->seq;
 
+	printf("Sending type: %d\n", icmp->icmp6_type);
+
 	// Vyplnění ICMP_file hlavičky
 	icmp_file->type = packet_details->file_type;				// Typ paketu
 	icmp_file->order = packet_details->order;						// Pořadí paketu
@@ -320,8 +322,6 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		packet_details->type = icmp->type;
 		packet_details->seq = icmp->un.echo.sequence;
 
-		printf("Recieved checksum: %x ------------------------\n", icmp->checksum);
-
 		if(ip->ttl != HOP_LIMIT){
 			packet_details->file_type = 0;
 			return;
@@ -333,55 +333,34 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 
 		struct icmp6_hdr *icmp;							// ICMP hlavička
 		struct sockaddr_in6 src_addr;
-		struct ip6_hdr *ip6;
 
 		src_addr_size = sizeof(struct sockaddr_in6);
-		header_size = sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info);
+		header_size = sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info);
 
-		DEBUG
 		packet_size = recvfrom(sock_id, packet, MTU, 0, (struct sockaddr *)&(src_addr), &src_addr_size);
-		printf("Recieved: %d\n", packet_size);
+		printf("Recieved bytes: %d\n", packet_size);
 		if(packet_size < 0){
 			printf("Server error: %d\n", errno);
 			perror("Reading packet");
 			exit(EXIT_FAILURE);
 		}
 
-		inet_ntop(AF_INET6, &(src_addr.sin6_addr), packet_details->src_addr, INET6_ADDRSTRLEN);
-		BIO_dump_fp(stdout, (const char *)&(src_addr.sin6_addr.s6_addr), 16);
-		printf("--------------------------------------------------------\n");
-		BIO_dump_fp(stdout, (const char *)&(packet_details->src_addr), sizeof(packet_details->src_addr));
-		printf("--------------------------------------------------------\n");
-		memset(&(src_addr.sin6_addr), 0, 16);
-		inet_pton(AF_INET6, packet_details->src_addr, &(src_addr.sin6_addr));
-		BIO_dump_fp(stdout, (const char *)&(src_addr.sin6_addr.s6_addr), 16);
-		printf("--------------------------------------------------------\n");
-		printf("--------------------------------------------------------\n");
-
-		DEBUG
-
 		// Výpočet konkrétních míst v paměti pro jednotlivé hlavičky a náklad
-		ip6 = (struct ip6_hdr *)packet;
-		icmp = (struct icmp6_hdr *)(packet + sizeof(struct ip6_hdr));
-		icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr));
-		icmp_payload = (unsigned char *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));		
+		icmp = (struct icmp6_hdr *)packet;
+		icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct icmp6_hdr));
+		icmp_payload = (unsigned char *)(packet + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));
 
-		// Konverze IP adres
-		inet_ntop(AF_INET6, &(ip6->ip6_src), packet_details->src_addr, INET6_ADDRSTRLEN);
-		inet_ntop(AF_INET6, &(ip6->ip6_dst), packet_details->dest_addr, INET6_ADDRSTRLEN);
-
-		packet_details->type = icmp->icmp6_type;
-		packet_details->seq = icmp->icmp6_seq;
-
-		BIO_dump_fp (stdout, (const char *)packet, sizeof(struct ip6_hdr));
-		BIO_dump_fp (stdout, (const char *)ip6, sizeof(struct ip6_hdr));
-
-		if(ip6->ip6_hlim != HOP_LIMIT){
+		if(icmp->icmp6_type == ICMP6_ECHO_REPLY){
 			packet_details->file_type = 0;
 			return;
 		}
 
+		packet_details->type = icmp->icmp6_type;
+		packet_details->seq = icmp->icmp6_seq;
+
 	}
+
+	printf("Recieved valid packet\n");
 
 	// Ukládání položek z jednotlivých hlaviček do struktury
 	// pro jednodušší přístup
