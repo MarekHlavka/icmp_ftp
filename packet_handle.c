@@ -44,17 +44,18 @@ unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 
 	int source_size = MAX_PYLD_SIZE;
 
-	unsigned char *buff = (unsigned char *)malloc(((MAX_PYLD_SIZE * (count - 1) + last_size)) * sizeof(unsigned char));
-
+	unsigned char *buff = (unsigned char *)malloc(((MAX_PYLD_SIZE * (count + 1))) * sizeof(unsigned char));
+	if(buff == NULL){
+		perror("No available memory\n");
+		exit(EXIT_FAILURE);
+	}
+	memset(buff, 0, ((MAX_PYLD_SIZE * (count - 1) + last_size)));
 	for(int i = 0; i < count; i++){
-
-		DEBUG
 
 		if(i == (count -1)){
 			source_size = last_size;
 		}
 		memcpy(buff + (i * MAX_PYLD_SIZE), source[i], source_size);
-		DEBUG
 	}
 	return buff;
 

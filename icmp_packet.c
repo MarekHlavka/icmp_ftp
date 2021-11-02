@@ -274,10 +274,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 */
 void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version)
 {
-
-	// TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO TODO 
-
-	
+ 	
 	struct s_icmp_file_info *icmp_file;				// ICMP_file hlavička
 	unsigned char *icmp_payload;					// Ukazatel na náklad paketu
 
@@ -288,12 +285,13 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 	socklen_t src_addr_size;
 
 	// Alokování paměti pro paket
-	packet = calloc(MTU, sizeof(uint8_t));
+	packet = malloc(MTU * sizeof(uint8_t));
 	if(packet == NULL){
 		perror("No memory available\n");
 		close_icmp_socket(sock_id);
 		exit(-1);
 	}
+	memset(packet, 0, MTU);
 
 	// IPv4 -------------------------------------------------------------------------------
 	if(version == 4){
@@ -324,6 +322,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 
 		if(ip->ttl != HOP_LIMIT){
 			packet_details->file_type = 0;
+			free(packet);
 			return;
 		}
 
@@ -352,6 +351,7 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 
 		if(icmp->icmp6_type == ICMP6_ECHO_REPLY){
 			packet_details->file_type = 0;
+			free(packet);
 			return;
 		}
 
@@ -480,6 +480,6 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 
 void prepare_icmp(struct icmp6_hdr *icmp, int seq){
 
-	icmp->icmp6_code = 0;
+	icmp->icmp6_code = seq;
 	icmp->icmp6_cksum = 0;
 }

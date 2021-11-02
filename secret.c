@@ -33,7 +33,9 @@ void print_usage(){
 int main(int argc, char** argv){
 
 	int argument;
-	bool file_flag, ip_flag, server_flag = false;
+	bool file_flag = false;
+	bool ip_flag = false;
+	bool server_flag = false;
 	char filename[256];
 	char address[128];
 
