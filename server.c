@@ -65,7 +65,7 @@ void run_version(int ver){
 				recieve_icmp_packet(socket_id, &packet, ver);
 				printf("Recieved file type ... %d\n", packet.file_type);
 				printf("Packet type .......... %d - %d\n", packet.type, ICMP6_ECHO_REPLY);
-			}while(packet.file_type != FILE_MV || packet.type == (ver == 4? ICMP_ECHOREPLY:ICMP6_ECHO_REPLY));
+			}while(packet.file_type != FILE_MV || packet.type == (ver == 4? ICMP_ECHOREPLY:ICMP6_ECHO_REPLY) || strcmp(filename, packet.filename) != 0);
 
 			printf("------------- Recieved valid packet **************\n");
 

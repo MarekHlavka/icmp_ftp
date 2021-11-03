@@ -20,8 +20,6 @@ uint16_t in6_cksum(struct ip6_hdr *ip6, uint16_t *payload, int payload_size);
 
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
-void prepare_icmp(struct icmp6_hdr *icmp, int seq);
-
 /*
 * Dunkce na otevření raw socketu a nastavení sokcetu
 * aby bylo možné posílat ICMP pakety
@@ -205,12 +203,12 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	icmp_file = (struct s_icmp_file_info*)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr)); 
 	icmp_payload = (unsigned char *)(packet + sizeof(struct ip6_hdr) + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));
 
-	prepare_icmp(icmp, packet_details->seq);
-
 	ip6->ip6_flow = packet_details->seq;
 	ip6->ip6_hlim = HOP_LIMIT;
 	ip6->ip6_nxt = IPPROTO_ICMPV6;
 	ip6->ip6_plen = htons(packet_details->payload_size + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));
+	icmp->icmp6_code = 69;
+	icmp->icmp6_cksum = 0;
 
 	printf("%d\n", inet_pton(AF_INET6, packet_details->src_addr, &(ip6->ip6_src)));
 	printf("%d\n", inet_pton(AF_INET6, packet_details->dest_addr, &(ip6->ip6_dst)));
@@ -221,7 +219,7 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 
 	ip6->ip6_vfc = 0x60;
 
-	icmp->icmp6_code = 0;
+	icmp->icmp6_code = 69;
 	icmp->icmp6_type = packet_details->type;
 	icmp->icmp6_id = htons(256);
 	icmp->icmp6_seq = packet_details->seq;
@@ -274,7 +272,7 @@ void send_icmp_packet(int sock_id, struct icmp_packet *packet_details, int versi
 */
 void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int version)
 {
- 	
+ 	printf("Recieved packet of verison: %d\n", version);
 	struct s_icmp_file_info *icmp_file;				// ICMP_file hlavička
 	unsigned char *icmp_payload;					// Ukazatel na náklad paketu
 
@@ -320,8 +318,10 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		packet_details->type = icmp->type;
 		packet_details->seq = icmp->un.echo.sequence;
 
-		if(ip->ttl != HOP_LIMIT){
+		if(ip->ttl != HOP_LIMIT || icmp->type == ICMP_ECHOREPLY || icmp->code != 69){
 			packet_details->file_type = 0;
+			packet_details->type = icmp->type;
+			memcpy(packet_details->filename, "", 2);
 			free(packet);
 			return;
 		}
@@ -349,8 +349,10 @@ void recieve_icmp_packet(int sock_id, struct icmp_packet *packet_details, int ve
 		icmp_file = (struct s_icmp_file_info *)(packet + sizeof(struct icmp6_hdr));
 		icmp_payload = (unsigned char *)(packet + sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info));
 
-		if(icmp->icmp6_type == ICMP6_ECHO_REPLY){
+		if(icmp->icmp6_type == ICMP6_ECHO_REPLY || icmp->icmp6_code != 69){
 			packet_details->file_type = 0;
+			packet_details->type = icmp->icmp6_type;
+			memcpy(packet_details->filename, "", 2);
 			free(packet);
 			return;
 		}
@@ -476,10 +478,4 @@ void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq){
 	icmp->un.echo.sequence = seq;
 	icmp->un.echo.id = 256;
 	icmp->checksum = 0;
-}
-
-void prepare_icmp(struct icmp6_hdr *icmp, int seq){
-
-	icmp->icmp6_code = seq;
-	icmp->icmp6_cksum = 0;
 }

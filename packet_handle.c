@@ -179,7 +179,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		send_icmp_packet(sock_id, &packet, version);
 
 		packet.seq++;
-		sleep(0.002);
+		sleep(1);
 
 		free(packet.payload);
 
