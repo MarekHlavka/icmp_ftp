@@ -104,10 +104,22 @@ void run_version(int ver){
 	close_icmp_socket(socket_id);
 	
 }
-
+void *run_server_4(){
+	run_version(4);
+	return NULL;
+}
+void *run_server_6(){
+	run_version(6);
+	return NULL;
+}
 
 void run_server(){
 
-	run_version(4);
+	pthread_t ver_4, ver_6;
+	pthread_create(&ver_4, NULL, run_server_4, NULL);
+	pthread_create(&ver_6, NULL, run_server_6, NULL);
+
+	pthread_join(ver_4, NULL);
+	pthread_join(ver_6, NULL);
 
 }

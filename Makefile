@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-std=c99 -Wall -Wextra -pedantic -g -D_POSIX_C_SOURCE=200112L
+CFLAGS=-std=c99 -Wall -Wextra -pedantic -g -D_POSIX_C_SOURCE=200809L -pthread -lpthread
 SRC=*.c
 HDR=*.h
 LIB= -I /usr/local/ssl/include -L /usr/local/ssl/lib -lssl -lcrypto
