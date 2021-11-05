@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
  int *count, int *last_size){
@@ -49,7 +50,7 @@ unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 		perror("No available memory\n");
 		exit(EXIT_FAILURE);
 	}
-	memset(buff, 0, ((MAX_PYLD_SIZE * (count - 1) + last_size)));
+	memset(buff, 0, (MAX_PYLD_SIZE * (count + 1)));
 	for(int i = 0; i < count; i++){
 
 		if(i == (count -1)){
@@ -74,6 +75,13 @@ void random_char_array_gen(unsigned char *buff, int size){
 	for(int i = 0; i < size/2; i++){
 		buff[i] = (rand()%26)+65;
 	}
+}
+
+void my_sleep(int msec){
+	struct timespec ts;
+	ts.tv_sec = msec / 1000;
+	ts.tv_nsec = (msec % 1000) * 1000000;
+	nanosleep(&ts, &ts);
 }
 
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
@@ -125,11 +133,17 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	int packet_count = 1;
 	int sock_id;
 	int last_size;
-	unsigned char unsigned_payload[payload_size];
+	unsigned char *unsigned_payload;
 	unsigned char iv[IV_SIZE];	
 	struct icmp_packet packet;
 
 	printf("%d\n", payload_size);
+
+	unsigned_payload = (unsigned char *)malloc(payload_size*sizeof(unsigned char));
+	if(unsigned_payload == NULL){
+		perror("No memory available 1\n");
+		exit(-1);
+	}
 
 	memcpy(unsigned_payload, payload, payload_size);
 	// Generate IV
@@ -179,11 +193,12 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		send_icmp_packet(sock_id, &packet, version);
 
 		packet.seq++;
-		sleep(1);
+		my_sleep(1);
 
 		free(packet.payload);
 
 	}
+	free(unsigned_payload);
 	free(encrypted_buff);
 	free_file_buff(buff, packet_count);
 	close_icmp_socket(sock_id);
