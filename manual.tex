@@ -1,0 +1,86 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[czech]{babel}
+\usepackage{times}
+\usepackage{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\hypersetup{colorlinks = true, hypertexnames = false}
+
+\geometry{
+	a4paper,
+	total={170mm, 240mm,},
+	left = 20mm,
+	top = 30mm,
+}
+
+\begin{document}
+\begin{titlepage}
+	\begin{center}
+		\Huge
+		\textsc{Vysoké učení technické v~Brně} \\
+		\huge
+		\textsc{Fakulta informačních technologií} \\
+		\vspace{\stretch{0.382}}
+		\LARGE
+		Síťové aplikace a~správa sítí\\
+		\Huge
+		Přenos souboru skrz skrztý kanál
+		\vspace{\stretch{0.618}}
+	\end{center}
+	{\Large
+		\today
+		\hfill
+		Marek Hlávka (xhlavk09)
+	}
+\end{titlepage}
+\tableofcontents
+\newpage
+
+\section{Zadání}
+Zadáním projektu bylo vytvořit klient/server aplikaci, pomocí které bude možno přenést soubor skrz skrytý kanál, kde jsou data přenášena pomocí ICMP protokolu, resp. uvnitř ICMP Echo-Request/Response zpráv. Kvůli zabezpečení musí být soubor zašifrován pomocí šifry AES. Serverová strana aplikace pak bude ukládat soubor do složky, ve které je spuštěn.
+
+\section{Spuštění}
+
+\centerline{\large./secret -s <ip|hostname> -r <file> [-l]}
+\begin{itemize}
+\item -s <ip|hostname> : adresa nebo hostname serveru na který bude odeslaný soubor
+\item -r <file> : specifikace souboru pro přenos
+\item -l : program spuštěný s tímto parametrem se chová jako server, který přijímá soubory posílané od klientů
+\end{itemize}
+Příklad souboru s uloženými servry pro filtraci:\\
+\begin{figure}[h]
+%%%\includegraphics[scale=1.1]{}
+\end{figure}
+
+\newpage
+\section{Návrh}
+Jako jazyk k implemntaci byl zvolen jazyk C. Celý program je rozdělen do dvou větších celků: 1. Strana klienta a 2. Strana serveru
+
+\section{Argunemty}
+V této části je kontrolováno spuštění programu, resp. kontrola argumentů při spuštění. K tomuto účelu je využita funkce \textit{getopt()} z knihovny \textit{getopt.h}. Jsou postupně zkontrolovány parametry, které jsou blíže popsané v sekci \textit{Spuštění}. Pokud nejsou některé požadované parametry uvedeny, program vypíše nápovědu a úspěšně se ukončí. V případě zadání parametru \textit{-l} nesjou vyžadovány další argumenty, vzhledem k tomu že server nepotřebuje cílovou ip adresu ani specifikovat souor pro přenos.
+\section{Klient}
+
+\subsection{Spuštení zachytávání paketů}
+Pro zachytávání paketů ja využita knihovna \textit{libpcap.h}, která umožnujě poslouchat pakety na příslušném rozhraní a s příslušným filtrem. Díky tomu můžeme zpracovávat pakety, které jsou jen v UDP komunikaci a na portu buď zadaném uživatelem nebo defaultně na portu 53. Protože v zadáná nebylo upřesněno na jakém rozhraní má program poslouchat pakety, je předpoklad že je program má očekávat na kterémkoliv rozhraní. Z tohoto důvodu si program nejdříve zjistí všechny rozhraní zařízení na kterém je spuštěn. Poté si pro daný počet rozhraní vytvoří separátní vlákna, pro každé rozhraní jedno. Pro zajištění správného přístupu k některým datům jsou vytvořeny semafory, které zajistí, že data nejsou změneny zatímco s nimi pracuje jiné vlákno. Následně je pomocí funkce \textit{pcap\_open\_live()} otevřena relace na daném rozhraní, poté je na něj aplikován filtr jako poslední je zavolána funkce \textit{pcap\_loop()} pro cyklické poslouchání paketů a jejich následné zpracování. Po skončení relace jsou uvolněné zdroje, teré byly dříve rezervované programem. Samotný program je poté ukončen sticknutím zkratky \textit{Ctrl + C}.
+
+\subsection{Zpracování paketů}
+Zpracování paketů probíhá ve funkci \textit{got\_packet()}, která je v souboru \textit{rec\_pack.c}. Celý postup spočívá v tom zpracovávat postupně hlavičky jednotlivých protokolů až se program dostane k samotnému dns paketu a jeho data následně zpracuje.
+
+\section{Server}
+
+\subsubsection{Rozklad paketů}
+ Jako první je hlavička IPv4 resp. IPv6. Pomocí funkce \textit{ether\_packet()} je určeno jestli je právě zpracovaný paket IPv4 nebo IPv6. Nálsedně je pomocí funkcí \textit{ip\_handle()} a \textit{ipv6\_handle()} uložena IP hlavička a její velikost stejně jao hlavička UDP. následně je pakte bez těchto hlaviček předán funkci \textit{dns\_handle()}, kde je už zpracovávána samotný dns paket. Do jednotlivých proměnných jsou uolžené hodnoty z dns hlavičky jako např. ID, RCODE nebo počet odpovědí, které jsou v paketu obsaženy. Následně je dotaz obsažený v paketu otestován jestli má sptrávnou třídu a typ a v neposldní ředě je zkontrolována adresa obsažena v dotazu, jestli je obsažena v souboru dodaném argumentem programu. Pokud je adresa v tomto souboru je nutné odelat tazateli zpět dns paket s vhodným RCODEm pomocí funkce\textit{bad\_response()}, jinak je paket přeposlaný dál pomocí funkce \textit{pkt\_forward()}.
+ 
+\subsubsection{Filtrované pakety}
+Na filtrované pakety, resp. pakety jejichž hostaame je obsaženo v souboru \textit{hostname\_file}, jsou tvořeny odpovědi ve funkci \textit{bad\_response}. Nejdřive je nastavena dns hlavička odesílaného paketu:\\
+\begin{figure}[h]
+%%%\includegraphics[scale=1.1]{}
+\end{figure}\\
+Následně je otevřený socket pomocí knihovny \textit{sys/socket.h} a ja nasteven podle toho jestli program vrací IPv4 paket nebo IPv6. Poté je jednoduše pomocí funkce \textit{sendto()} odeslaná zpráva obsahující dns paket s potřebnými informacemi zpět tazateli.
+
+\subsubsection{Ostatní pakety}
+Ostatní pakety jsou přeposílány neznámému serveru na adrese získananým argumentem \textit{-s server}. Pakety jsou přeposílány v nezměněné podobě s původní hlavičkou ze získaného paketu. Stejně jako u filtrovaných paketů je nastevan socket na následně pomocí funkcí \textit{sendto} a \textit{recvfrom} je tento paket odeslaný a je na něj zísána odpověď, která je poté přeposlána původnímu tazateli. Před samotným odesláním odpovědi je socket přenastaven podle toho jestli vracíme IPv4 nebo IPv6 odověď.
+\end{document}

@@ -64,11 +64,13 @@ int main(int argc, char** argv){
 		perror("Server cannot be run with destination IP address or filename\n");
 		printf("F: %d\nIP: %d\nS: %d\n", file_flag, ip_flag, server_flag);
 		print_usage();
+		exit(WRONG_PARAMS);
 
 	}
 	if(!server_flag && (!file_flag || !ip_flag)){
 		perror("Missing arguments\n");
 		print_usage();
+		exit(WRONG_PARAMS);
 	}
 
 	if(server_flag){
