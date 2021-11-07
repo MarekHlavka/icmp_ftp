@@ -55,32 +55,36 @@ Příklad souboru s uloženými servry pro filtraci:\\
 %%%\includegraphics[scale=1.1]{}
 \end{figure}
 
-\newpage
 \section{Návrh}
 Jako jazyk k implemntaci byl zvolen jazyk C. Celý program je rozdělen do dvou větších celků: 1. Strana klienta a 2. Strana serveru
 
 \section{Argunemty}
 V této části je kontrolováno spuštění programu, resp. kontrola argumentů při spuštění. K tomuto účelu je využita funkce \textit{getopt()} z knihovny \textit{getopt.h}. Jsou postupně zkontrolovány parametry, které jsou blíže popsané v sekci \textit{Spuštění}. Pokud nejsou některé požadované parametry uvedeny, program vypíše nápovědu a úspěšně se ukončí. V případě zadání parametru \textit{-l} nesjou vyžadovány další argumenty, vzhledem k tomu že server nepotřebuje cílovou ip adresu ani specifikovat souor pro přenos.
+
+\newpage
 \section{Klient}
 
-\subsection{Spuštení zachytávání paketů}
-Pro zachytávání paketů ja využita knihovna \textit{libpcap.h}, která umožnujě poslouchat pakety na příslušném rozhraní a s příslušným filtrem. Díky tomu můžeme zpracovávat pakety, které jsou jen v UDP komunikaci a na portu buď zadaném uživatelem nebo defaultně na portu 53. Protože v zadáná nebylo upřesněno na jakém rozhraní má program poslouchat pakety, je předpoklad že je program má očekávat na kterémkoliv rozhraní. Z tohoto důvodu si program nejdříve zjistí všechny rozhraní zařízení na kterém je spuštěn. Poté si pro daný počet rozhraní vytvoří separátní vlákna, pro každé rozhraní jedno. Pro zajištění správného přístupu k některým datům jsou vytvořeny semafory, které zajistí, že data nejsou změneny zatímco s nimi pracuje jiné vlákno. Následně je pomocí funkce \textit{pcap\_open\_live()} otevřena relace na daném rozhraní, poté je na něj aplikován filtr jako poslední je zavolána funkce \textit{pcap\_loop()} pro cyklické poslouchání paketů a jejich následné zpracování. Po skončení relace jsou uvolněné zdroje, teré byly dříve rezervované programem. Samotný program je poté ukončen sticknutím zkratky \textit{Ctrl + C}.
+\subsection{Načtení vstupních dat}
+Po spuštění aplikace s paremetry klienta je zkontrolována daná ip addresa/hostname pomocí funkce \textit{getaddrinfo()}, která vratí informace o vstupní adrese potřebné pro další běh programu. Následně je načten samotný soubor, který je určen k přenosu. Soubor je načtený v binární formě, tudiž nezáleží na jeho připoně. Soubor je načítán najednou tudíž je jeho velikost je omezena velikosti dostupné RAM na kterém je aplikace spuštěna.
 
-\subsection{Zpracování paketů}
-Zpracování paketů probíhá ve funkci \textit{got\_packet()}, která je v souboru \textit{rec\_pack.c}. Celý postup spočívá v tom zpracovávat postupně hlavičky jednotlivých protokolů až se program dostane k samotnému dns paketu a jeho data následně zpracuje.
+\subsection{Šifrování}
+Data vstupního souboru jsou šifrována naráz, jednak kvůli jednodušší implementaci, kvůli využití místa v paketu a také kvůli zvýšené bezpečnosti, aby nebyly samostatné pakety rozšifrovatelné. Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}.
 
+\subsection{Skládání a odesílání paketu}
+%% Custom IP headers
+Potřebné data k složení výsledného paketu jsou uložena do struktury \textit{icmp\_packet}, definované v souboru \textit{icmp\_packet.h}. Tato struktura slouží jako mezikrok mezi získáváním všech potřebných dat a jejich zapisováním do paketu. Následně je před odesláním tato struktura přečtena a z jejich dat jsou utvořené potřebné hlavičky a payload packetu, tzn. \textit{IP\/IPv6}, \textit{ICMP\/ICMPv6} a \textit{ICMP\_FILE} hlavičky. Hlavička \textit{ICMP\_FILE} je definovaná touto aplikací specificky pro přenos souboru pomocí icmp paketů. Výsledný paket je pak odeslán pomocí funkce \textit{sentto()} a celý tenkto krok je zopakován pro každou část dat  která vznikla rozdělením zašifrovaných dat na velikost, kterou je možné posílat po síti pomocí paketů.
+
+\newpage
 \section{Server}
 
-\subsubsection{Rozklad paketů}
- Jako první je hlavička IPv4 resp. IPv6. Pomocí funkce \textit{ether\_packet()} je určeno jestli je právě zpracovaný paket IPv4 nebo IPv6. Nálsedně je pomocí funkcí \textit{ip\_handle()} a \textit{ipv6\_handle()} uložena IP hlavička a její velikost stejně jao hlavička UDP. následně je pakte bez těchto hlaviček předán funkci \textit{dns\_handle()}, kde je už zpracovávána samotný dns paket. Do jednotlivých proměnných jsou uolžené hodnoty z dns hlavičky jako např. ID, RCODE nebo počet odpovědí, které jsou v paketu obsaženy. Následně je dotaz obsažený v paketu otestován jestli má sptrávnou třídu a typ a v neposldní ředě je zkontrolována adresa obsažena v dotazu, jestli je obsažena v souboru dodaném argumentem programu. Pokud je adresa v tomto souboru je nutné odelat tazateli zpět dns paket s vhodným RCODEm pomocí funkce\textit{bad\_response()}, jinak je paket přeposlaný dál pomocí funkce \textit{pkt\_forward()}.
- 
-\subsubsection{Filtrované pakety}
-Na filtrované pakety, resp. pakety jejichž hostaame je obsaženo v souboru \textit{hostname\_file}, jsou tvořeny odpovědi ve funkci \textit{bad\_response}. Nejdřive je nastavena dns hlavička odesílaného paketu:\\
-\begin{figure}[h]
-%%%\includegraphics[scale=1.1]{}
-\end{figure}\\
-Následně je otevřený socket pomocí knihovny \textit{sys/socket.h} a ja nasteven podle toho jestli program vrací IPv4 paket nebo IPv6. Poté je jednoduše pomocí funkce \textit{sendto()} odeslaná zpráva obsahující dns paket s potřebnými informacemi zpět tazateli.
+\subsection{Spuštění serveru, pthread}
+Po spuštění serveru jsou okamžitě vztvořeny dvě vlákna, aby mohly být přijímány současně IPv4 a IPv6 pakety. Jednak je potřeba pro každý typ paketů otevřýt soket s jinými parametry, ale také aby se program nezdržoval např. při prenosu pomocí IPv4 paketů s náhodnými ICMPv6 pakety. Po vytvoření těchto vláken program čeká na příchozí pakety, keteŕé byly zachyceny.
 
-\subsubsection{Ostatní pakety}
-Ostatní pakety jsou přeposílány neznámému serveru na adrese získananým argumentem \textit{-s server}. Pakety jsou přeposílány v nezměněné podobě s původní hlavičkou ze získaného paketu. Stejně jako u filtrovaných paketů je nastevan socket na následně pomocí funkcí \textit{sendto} a \textit{recvfrom} je tento paket odeslaný a je na něj zísána odpověď, která je poté přeposlána původnímu tazateli. Před samotným odesláním odpovědi je socket přenastaven podle toho jestli vracíme IPv4 nebo IPv6 odověď.
+\subsection{Zpracování příchoyźích paketů}
+Po zachycení paktu funkcí \textit{recvfrom} jsou data čtené z jednotlivých hlaviček. Při nesouhlasu důležitých informací jako např.: "icmp code", "filename" nebo "icmp type" je paket zahozen a čeká se příchod dalšího. Není tedy možné přenášet více souborů najednou, pokud není jeden přenášen pomocí IPv4 a druhý pomocí IPv6.
+
+\subsection{Zpracování přijatých dat}
+
+\section{Hlavička ICMP\_FILE}
+
 \end{document}
