@@ -31,9 +31,9 @@ struct icmp_packet
 	unsigned char* payload;
 	int payload_size;
 	uint8_t file_type;
-	uint16_t order;
+	uint32_t order;
 	int cipher_len;
-	int count;
+	uint32_t count;
 	int part_size;
 	int src_len;
 	int seq;
@@ -44,7 +44,7 @@ struct icmp_packet
 struct s_icmp_file_info
 {
 	uint8_t type;
-	uint16_t order;
+	uint32_t order;
 	int cipher_len;
 	int count;
 	int part_size;

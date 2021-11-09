@@ -10,7 +10,7 @@ void run_version(int ver){
 
 	// DOUBLE VARS FOR BOTH THREADS
 
-	int packet_count = 0;
+	uint32_t packet_count = 0;
 	int last_size = 0;
 	int cipher_len = 0;
 	int original_size = 0;
@@ -49,6 +49,7 @@ void run_version(int ver){
 
 			memcpy(buff[packet.order], packet.payload, packet.part_size);
 			packet_count++;
+		
 			if(packet.order == packet_count -1){
 				last_size = packet.part_size;
 			}
@@ -73,6 +74,7 @@ void run_version(int ver){
 
 		printf("%d\n", original_size);
 
+
 		unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
 		unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char) * 4);
 		unsigned char *original = (unsigned char *)malloc(original_size * sizeof(unsigned char));
@@ -88,15 +90,16 @@ void run_version(int ver){
 		printf("Decrypted len: %d\n", decrypted_len);
 
 		write_file_as_byte_array(filename, original, original_size);
+		
 
-		for(int i = 0; i < packet_count; i++){
+		for(uint32_t i = 0; i < packet_count; i++){
 			free(buff[i]);
 		}
-
+		
 		free(original);
 		free(decrypted);
 		free(merged_buff);
-
+		
 		printf("File: %s saved...\n", filename);
 		packet_count = 0;
 	}

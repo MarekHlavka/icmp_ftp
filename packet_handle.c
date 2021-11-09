@@ -8,9 +8,9 @@
 #include <time.h>
 
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
- int *count, int *last_size){
+ uint32_t *count, int *last_size){
 
-	int packet_count = payload_size / MAX_PYLD_SIZE;
+	uint32_t packet_count = payload_size / MAX_PYLD_SIZE;
 	*last_size = payload_size % MAX_PYLD_SIZE;
 
 	if(*last_size > 0){
@@ -26,7 +26,7 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 		exit(EXIT_FAILURE);
 	}
 
-	for(int i = 0; i < packet_count ; i++){
+	for(uint32_t i = 0; i < packet_count ; i++){
 
 		payload_list[i] = (unsigned char *)malloc(MAX_PYLD_SIZE * sizeof(unsigned char));
 		if(payload_list[i] == NULL){
@@ -41,7 +41,7 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 
 }
 
-unsigned char* marge_payload(unsigned char **source, int count, int last_size){
+unsigned char* marge_payload(unsigned char **source, uint32_t count, int last_size){
 
 	int source_size = MAX_PYLD_SIZE;
 
@@ -51,7 +51,7 @@ unsigned char* marge_payload(unsigned char **source, int count, int last_size){
 		exit(EXIT_FAILURE);
 	}
 	memset(buff, 0, (MAX_PYLD_SIZE * (count + 1)));
-	for(int i = 0; i < count; i++){
+	for(uint32_t i = 0; i < count; i++){
 
 		if(i == (count -1)){
 			source_size = last_size;
@@ -77,10 +77,10 @@ void random_char_array_gen(unsigned char *buff, int size){
 	}
 }
 
-void my_sleep(int msec){
+void my_sleep(){
 	struct timespec ts;
-	ts.tv_sec = msec / 1000;
-	ts.tv_nsec = (msec % 1000) * 1000000;
+	ts.tv_sec = 0;
+	ts.tv_nsec = 1005000;
 	nanosleep(&ts, &ts);
 }
 
@@ -130,7 +130,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	char *filename, int payload_size, int version){
 
 	unsigned char **buff;
-	int packet_count = 1;
+	uint32_t packet_count = 1;
 	int sock_id;
 	int last_size;
 	unsigned char *unsigned_payload;
@@ -173,7 +173,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	memcpy(packet.iv, iv, IV_SIZE);
 	strcpy(packet.filename, filename);
 
-	for(int i = 0; i < packet_count; i++){	
+	for(uint32_t i = 0; i < packet_count; i++){	
 
 		int packet_size;
 		if(i == packet_count - 1){
@@ -193,7 +193,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		send_icmp_packet(sock_id, &packet, version);
 
 		packet.seq++;
-		my_sleep(1);
+		my_sleep();
 
 		free(packet.payload);
 

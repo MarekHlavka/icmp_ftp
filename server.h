@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <signal.h>
 
 void run_server();
 
