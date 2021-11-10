@@ -57,12 +57,10 @@ void run_client(char *address, char *src_filename){
 	int payload_len;
 
 	int ip_version = lookup_host(address, dest);
-  printf("%d\n", ip_version);
 	if(ip_version == -1){
 		perror("Wrong address format");
 		exit(-1);
 	}
-  printf("%s\n", dest);
 	if(ip_version == 4){
 		strcpy(src_ip, "0.0.0.0");
 	}

@@ -115,8 +115,8 @@ void send_icmp4_packet(int sock_id, struct icmp_packet *packet_details){
 	struct in_addr src_addr;					// IP adresa zdroje
 	struct in_addr dest_addr;					// IP adresa cíle
 
-	printf("%d\n", inet_pton(AF_INET, packet_details->src_addr, &src_addr));
-	printf("%d\n", inet_pton(AF_INET, packet_details->dest_addr, &dest_addr));
+	inet_pton(AF_INET, packet_details->src_addr, &src_addr);
+	inet_pton(AF_INET, packet_details->dest_addr, &dest_addr);
 
 	// Výpočet velikosti paketu
 	packet_size = sizeof(struct iphdr) + sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size;
@@ -167,11 +167,8 @@ void send_icmp4_packet(int sock_id, struct icmp_packet *packet_details){
 
 	int retval = 0;
 	icmp->checksum = in_cksum((unsigned short *)icmp, sizeof(struct icmphdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
-	printf("Sended checksum: %x ------------------------\n", icmp->checksum);
 	retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr, sizeof(struct sockaddr_in));
-	printf("Sended: %d\n", retval);
-
-	printf("%d\n", retval);
+	
 	if(retval == -1){
 		printf("Socket error %d\n", errno);
 		exit(EXIT_FAILURE);
@@ -210,8 +207,8 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	icmp->icmp6_code = 69;
 	icmp->icmp6_cksum = 0;
 
-	printf("%d\n", inet_pton(AF_INET6, packet_details->src_addr, &(ip6->ip6_src)));
-	printf("%d\n", inet_pton(AF_INET6, packet_details->dest_addr, &(ip6->ip6_dst)));
+	inet_pton(AF_INET6, packet_details->src_addr, &(ip6->ip6_src));
+	inet_pton(AF_INET6, packet_details->dest_addr, &(ip6->ip6_dst));
 
 	memset(&servaddr6, 0, sizeof(struct sockaddr_in6));
 	servaddr6.sin6_family = AF_INET6;
@@ -223,8 +220,6 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	icmp->icmp6_type = packet_details->type;
 	icmp->icmp6_id = htons(256);
 	icmp->icmp6_seq = packet_details->seq;
-
-	printf("Sending type: %d\n", icmp->icmp6_type);
 
 	// Vyplnění ICMP_file hlavičky
 	icmp_file->type = packet_details->file_type;				// Typ paketu
@@ -239,14 +234,9 @@ void send_icmp6_packet(int sock_id, struct icmp_packet *packet_details){
 	memcpy(icmp_file->iv, packet_details->iv, IV_SIZE);
 	memcpy(icmp_file->filename, packet_details->filename, MAX_FILENAME);
 
-	printf("-------------------------------------------\n");
-	BIO_dump_fp (stdout, (const char *)ip6, sizeof(struct ip6_hdr));
-	printf("-------------------------------------------\n");
-
 	int retval = 0;
 	icmp->icmp6_cksum = in6_cksum(ip6, (unsigned short *)icmp, sizeof(struct icmp6_hdr) + sizeof(struct s_icmp_file_info) + packet_details->payload_size);
 	retval = sendto(sock_id, packet, packet_size, 0, (struct sockaddr *)&servaddr6, sizeof(struct sockaddr_in6));
-	printf("Sended: %d\n", retval);
 	if(retval == -1){
 		printf("Socket error %d\n", errno);
 		exit(EXIT_FAILURE);
@@ -408,8 +398,6 @@ void close_icmp_socket(int sock_id){
 
 uint16_t in_cksum(uint16_t *addr, int len)
 {	
-
-	printf("LEN = %d\n", len);
 	assert(len >= 0);
 	
 	uint16_t ret = 0;

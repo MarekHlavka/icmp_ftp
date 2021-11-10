@@ -84,6 +84,28 @@ void my_sleep(){
 	nanosleep(&ts, &ts);
 }
 
+void send_text(uint32_t order, uint32_t count){
+
+	static int i = 0;
+	static char str[32] = ".....................";
+    double percentage = (double)(order + 1) / count;
+    double part = (double)count/100;
+    double step = part / 50;
+
+    if(((long long)(order + 1) % (int)step) == 0){
+    	str[i] = '.';
+    	if(i == 20){
+    		i = 0;
+    	}
+    	else{
+	    	i++;
+	    }
+    	str[i] = '#';
+    }
+
+	printf("\rSending %s [%.2f%%]",str , percentage*100);
+}
+
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int mode, int src_len, unsigned char *iv_in){
 
@@ -137,8 +159,6 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	unsigned char iv[IV_SIZE];	
 	struct icmp_packet packet;
 
-	printf("%d\n", payload_size);
-
 	unsigned_payload = (unsigned char *)malloc(payload_size*sizeof(unsigned char));
 	if(unsigned_payload == NULL){
 		perror("No memory available 1\n");
@@ -189,7 +209,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		packet.part_size = packet_size;
 		packet.order = i;
 
-		printf("Sending packet to client %d\n", packet.seq);
+		send_text(i, packet_count);
 		send_icmp_packet(sock_id, &packet, version);
 
 		packet.seq++;
@@ -198,6 +218,7 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		free(packet.payload);
 
 	}
+	printf("\rSending ................................ [DONE]\n");
 	free(unsigned_payload);
 	free(encrypted_buff);
 	free_file_buff(buff, packet_count);
