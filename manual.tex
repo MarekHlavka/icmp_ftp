@@ -87,6 +87,18 @@ Po zachycení paktu funkcí \textit{recvfrom} jsou data čtené z jednotlivých 
 Po přijmutí všech paketů (aplikce počítá že nedochází ke ztrátám paketů), jsou jednotlivá data zkopírována dohromady, podle pořadí. Tento celek je poté rozšifrován pomocí klíče, který je zadaná přímó v programu definovaném v souboru \textit{icmp\_packet.h}.
 
 \section{Hlavička ICMP\_FILE}
+%%%\includegraphics[scale=1.1]{}
+\begin{itemize}
+\item type ....... Typ icmp_file paketu, zejména pro případný bezpečný přenos
+\item order ...... Pořadí daného paketu v celkovém přenosu
+\item cipher_len . Délka celého zašifrovaného souboru
+\item count ...... Počet přenášených paketů
+\item part_size .. Velikost právě přenášených dat
+\item src_len .... Velikost původného souboru pro kontrolu po dešifrování
+\item iv ......... Startovací vektor pro šifru
+\item filename ... Název přenášeného souboru
+\end{itemize}
+
 \ssection{Šifrování}
 Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}.
 
