@@ -67,8 +67,8 @@ V této části je kontrolováno spuštění programu, resp. kontrola argumentů
 \subsection{Načtení vstupních dat}
 Po spuštění aplikace s paremetry klienta je zkontrolována daná ip addresa/hostname pomocí funkce \textit{getaddrinfo()}, která vratí informace o vstupní adrese potřebné pro další běh programu. Následně je načten samotný soubor, který je určen k přenosu. Soubor je načtený v binární formě, tudiž nezáleží na jeho připoně. Soubor je načítán najednou tudíž je jeho velikost je omezena velikosti dostupné RAM na kterém je aplikace spuštěna.
 
-\subsection{Šifrování}
-Data vstupního souboru jsou šifrována naráz, jednak kvůli jednodušší implementaci, kvůli využití místa v paketu a také kvůli zvýšené bezpečnosti, aby nebyly samostatné pakety rozšifrovatelné. Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}.
+\subsection{Šifrování odesílaného paketu}
+Data vstupního souboru jsou šifrována naráz, jednak kvůli jednodušší implementaci, kvůli využití místa v paketu a také kvůli zvýšené bezpečnosti, aby nebyly samostatné pakety rozšifrovatelné.
 
 \subsection{Skládání a odesílání paketu}
 %% Custom IP headers
@@ -84,7 +84,10 @@ Po spuštění serveru jsou okamžitě vztvořeny dvě vlákna, aby mohly být p
 Po zachycení paktu funkcí \textit{recvfrom} jsou data čtené z jednotlivých hlaviček. Při nesouhlasu důležitých informací jako např.: "icmp code", "filename" nebo "icmp type" je paket zahozen a čeká se příchod dalšího. Není tedy možné přenášet více souborů najednou, pokud není jeden přenášen pomocí IPv4 a druhý pomocí IPv6.
 
 \subsection{Zpracování přijatých dat}
+Po přijmutí všech paketů (aplikce počítá že nedochází ke ztrátám paketů), jsou jednotlivá data zkopírována dohromady, podle pořadí. Tento celek je poté rozšifrován pomocí klíče, který je zadaná přímó v programu definovaném v souboru \textit{icmp\_packet.h}.
 
 \section{Hlavička ICMP\_FILE}
+\ssection{Šifrování}
+Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}.
 
 \end{document}
