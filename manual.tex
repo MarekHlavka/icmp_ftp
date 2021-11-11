@@ -87,7 +87,9 @@ Po zachycení paktu funkcí \textit{recvfrom} jsou data čtené z jednotlivých 
 Po přijmutí všech paketů (aplikce počítá že nedochází ke ztrátám paketů), jsou jednotlivá data zkopírována dohromady, podle pořadí. Tento celek je poté rozšifrován pomocí klíče, který je zadaná přímó v programu definovaném v souboru \textit{icmp\_packet.h}.
 
 \section{Hlavička ICMP\_FILE}
-%%%\includegraphics[scale=1.1]{}
+\begin{figure}[h]
+\includegraphics[scale=1.1]{img/struct.png}
+\end{figure}
 \begin{itemize}
 \item type ....... Typ icmp_file paketu, zejména pro případný bezpečný přenos
 \item order ...... Pořadí daného paketu v celkovém přenosu
@@ -100,6 +102,11 @@ Po přijmutí všech paketů (aplikce počítá že nedochází ke ztrátám pak
 \end{itemize}
 
 \ssection{Šifrování}
-Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}.
+Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}. Tato šifra je dostupná např. z \cite{aes}. Data jsou přesněji šifrována pomocí 256 bitové AES šifry v CBC módu. To vyžaduje aby klíč (key) byl dlouhý 256 bitů a startovaní vektor (iv) byl dlouhý 128 bitů.
+
+\begin{thebibliography}{2}
+\bibitem{aes}
+https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+\end{thebibliography}
 
 \end{document}
