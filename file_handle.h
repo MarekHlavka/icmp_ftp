@@ -2,7 +2,7 @@
 #define FILE_HANDLE
 
 /*
-* Funkce na načtení libovolného souboru jako bajtového pole - nezávislé na příponě
+* Funkce na načtení libovolného souboru jako bajtového pole - nezávislé na příponě souboru
 * filename		- Název zdrojového souboru
 * payload_len 	- Ukazatel na uložení délky načteného souboru
 * RETURNVAL		- pole bajtů, načtené ze souboru

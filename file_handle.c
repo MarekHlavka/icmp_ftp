@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 
-#define WRITE_SIZE 100
+#define WRITE_SIZE 100	// Velikost jednoho zápisu do souboru
 
 /*
 * Funkce na načtení libovolného souboru jako bajtového pole - nezávislé na příponě
@@ -41,6 +41,7 @@ void write_file_as_byte_array(char* filename, unsigned char* src, int src_len){
 
 	FILE *fileptr;
 
+	// Určení informací pro cyklické zapisování
 	uint32_t loop = src_len / WRITE_SIZE;
 	uint32_t last = src_len % WRITE_SIZE;
 	unsigned char* buff = src;
@@ -51,6 +52,7 @@ void write_file_as_byte_array(char* filename, unsigned char* src, int src_len){
 		exit(EXIT_FAILURE);
 	}
 
+	// Cyklický zápis do souboru - zápis v kuse potřebuje příliš zdrojů zařízení
 	for(uint32_t i = 0; i < loop; i++){
 		fwrite((char *)buff, 1, WRITE_SIZE, fileptr);
 		buff += WRITE_SIZE;

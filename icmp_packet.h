@@ -10,19 +10,20 @@
 #include <netinet/ip_icmp.h>
 #include <netinet/icmp6.h>
 
-#define MTU 			1450
-#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info) - 58)
-#define MAX_FILENAME 	32
-#define KEY 			"xhlavk09"
-#define KEY_SIZE 		32
-#define IV_SIZE			KEY_SIZE/2
-#define IPV6_HDRINCL	36
-#define PSEU_HDR_LEN	40
+#define MTU 			1450	// Maximální velikost paketu
+#define MAX_PYLD_SIZE 	(MTU - sizeof(struct iphdr) - sizeof(struct icmphdr) - sizeof(struct s_icmp_file_info) - 58) // Maximální velikost payloadu
+#define MAX_FILENAME 	32 		// Maximální délka názvu souboru
+#define KEY 			"xhlavk09" // Klíč k šifrování
+#define KEY_SIZE 		32 			// Velikost klíče
+#define IV_SIZE			KEY_SIZE/2 	// Velikost inicializačního vektoru
+#define IPV6_HDRINCL	36 
+#define PSEU_HDR_LEN	40	// Velikost ipv6 pseudohlavičky pro výpočet checksum
 
 #define OK_REPLY		10
 #define FILE_MV			1
 #define HOP_LIMIT		239
 
+// Struktura pro jednodušší přenost důležitých dat mezi funkcemi
 struct icmp_packet
 {
 	char src_addr[100];
@@ -41,6 +42,7 @@ struct icmp_packet
 	char filename[MAX_FILENAME];
 };
 
+// Struktura definující protokol pro kontrolu přenosu souboru
 struct s_icmp_file_info
 {
 	uint8_t type;

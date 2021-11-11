@@ -1,5 +1,6 @@
 #include "server.h"
 
+// Spuštění serveru pro specifickou verzi paketů
 void run_version(int ver){
 
 	struct icmp_packet packet;
@@ -8,7 +9,6 @@ void run_version(int ver){
 	socket_id = open_icmp_socket(ver, 1);
 	bind_icmp_socket(socket_id, ver);
 
-	// DOUBLE VARS FOR BOTH THREADS
 
 	uint32_t packet_count = 0;
 	int last_size = 0;
@@ -17,15 +17,12 @@ void run_version(int ver){
 	unsigned char iv[IV_SIZE];
 	char filename[MAX_FILENAME];
 
-	// Server for IPv4 -----------------------------------------------------------------
+	// Cyklus pro nekonečný běh serveru
 	while(1){
 
-		printf("Listening......\n");
-		// Listening for first packet of FTP ------------------------
+		// Přijímaní prvního paketu
 		do{
 			recieve_icmp_packet(socket_id, &packet, ver);
-			printf("Recieved file type ... %d\n", packet.file_type);
-			printf("Packet type .......... %d - %d\n", packet.type, ICMP6_ECHO_REPLY);
 		}while(packet.file_type != FILE_MV);
 
 		unsigned char *buff[packet.count];
@@ -35,11 +32,11 @@ void run_version(int ver){
 		memcpy(iv, packet.iv, IV_SIZE);
 		memcpy(filename, packet.filename, MAX_FILENAME);
 
-		// Cycling through rest of the packet of this
+		// Cyklus pro přijímaní paketu pro momentálně přenášený soubor
+		// Ostatní pakety stejného druhu jsou zahozeny
 		while(1){
 
-			printf("Order ......... %d\n", packet.order);
-
+			// Alokace paměti
 			buff[packet.order] = (unsigned char *)malloc(packet.part_size * sizeof(unsigned char));
 			if(buff[packet.order] == NULL){
 					perror("No memory available \n");
@@ -49,33 +46,26 @@ void run_version(int ver){
 
 			memcpy(buff[packet.order], packet.payload, packet.part_size);
 			packet_count++;
-		
+			free(packet.payload);
+
 			if(packet.order == packet_count -1){
 				last_size = packet.part_size;
 			}
-			free(packet.payload);
-			printf("Current count: %d || All count: %d\n", packet.count, packet_count);
+			// Kontrola zda jsou všechny pakety přeneseny
 			if(packet.count == packet_count){
 				break;
 			}
 
-			printf("\n----------- End of valid packet --------------\n\n");
-
-			// MEMORY PROBLEMS ------------------------------------------------
+			// Přijímaní dalších paketů aktuálně přenášeného souboru
 			do{
 				recieve_icmp_packet(socket_id, &packet, ver);
-				printf("Recieved file type ... %d\n", packet.file_type);
-				printf("Packet type .......... %d - %d\n", packet.type, ICMP6_ECHO_REPLY);
 			}while(packet.file_type != FILE_MV || packet.type == (ver == 4? ICMP_ECHOREPLY:ICMP6_ECHO_REPLY) || strcmp(filename, packet.filename) != 0);
-
-			printf("------------- Recieved valid packet **************\n");
 
 		}
 
-		printf("%d\n", original_size);
-
-
+		// Sloučení veškerých dat souboru
 		unsigned char *merged_buff = marge_payload(buff, packet_count, last_size);
+		// Alokace paměti před dešifrováním
 		unsigned char *decrypted = (unsigned char *)malloc(original_size * sizeof(unsigned char) * 4);
 		unsigned char *original = (unsigned char *)malloc(original_size * sizeof(unsigned char));
 
@@ -84,14 +74,14 @@ void run_version(int ver){
 			close_icmp_socket(socket_id);
 			exit(-1);
 		}
+		// Dešifrování dat
 		int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 		memcpy(original, decrypted, original_size);
 
-		printf("Decrypted len: %d\n", decrypted_len);
-
+		// Zapsaní dat do souboru ve složce, kde je aplikace spuštěna
 		write_file_as_byte_array(filename, original, original_size);
 		
-
+		// Uvolnění zdrojů aktuálního souboru
 		for(uint32_t i = 0; i < packet_count; i++){
 			free(buff[i]);
 		}
@@ -99,7 +89,6 @@ void run_version(int ver){
 		free(original);
 		free(decrypted);
 		free(merged_buff);
-		
 		printf("File: %s saved...\n", filename);
 		packet_count = 0;
 	}
