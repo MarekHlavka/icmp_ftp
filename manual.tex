@@ -88,25 +88,25 @@ Po přijmutí všech paketů (aplikce počítá že nedochází ke ztrátám pak
 
 \section{Hlavička ICMP\_FILE}
 \begin{figure}[h]
-\includegraphics[scale=1.1]{img/struct.png}
+\includegraphics[scale=0.2]{img/struct.png}
 \end{figure}
 \begin{itemize}
-\item type ....... Typ icmp_file paketu, zejména pro případný bezpečný přenos
+\item type ....... Typ icmp\_file paketu, zejména pro případný bezpečný přenos
 \item order ...... Pořadí daného paketu v celkovém přenosu
-\item cipher_len . Délka celého zašifrovaného souboru
+\item cipher\_len . Délka celého zašifrovaného souboru
 \item count ...... Počet přenášených paketů
-\item part_size .. Velikost právě přenášených dat
-\item src_len .... Velikost původného souboru pro kontrolu po dešifrování
+\item part\_size .. Velikost právě přenášených dat
+\item src\_len .... Velikost původného souboru pro kontrolu po dešifrování
 \item iv ......... Startovací vektor pro šifru
 \item filename ... Název přenášeného souboru
 \end{itemize}
 
-\ssection{Šifrování}
+\section{Šifrování}
 Šifrování probíha pomocí knihovny \textit{OpenSSL}, kontrétně pomocí šifry AES. Šifrování a rozšifrování souboru pak probíha v daných funkcích v souboru \textit{aes.c}. Tato šifra je dostupná např. z \cite{aes}. Data jsou přesněji šifrována pomocí 256 bitové AES šifry v CBC módu. To vyžaduje aby klíč (key) byl dlouhý 256 bitů a startovaní vektor (iv) byl dlouhý 128 bitů.
 
 \begin{thebibliography}{2}
 \bibitem{aes}
-https://wiki.openssl.org/index.php/EVP_Symmetric_Encryption_and_Decryption
+https://wiki.openssl.org/index.php/EVP\_Symmetric\_Encryption\_and\_Decryption
 \end{thebibliography}
 
 \end{document}

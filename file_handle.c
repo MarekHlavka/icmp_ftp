@@ -40,14 +40,12 @@ void write_file_as_byte_array(char* filename, unsigned char* src, int src_len){
 	printf("Writing file\n");
 
 	FILE *fileptr;
-	char new_name[80] = "New";
-	strcat(new_name, filename);
 
 	uint32_t loop = src_len / WRITE_SIZE;
 	uint32_t last = src_len % WRITE_SIZE;
 	unsigned char* buff = src;
 
-	fileptr = fopen(new_name, "wb+");
+	fileptr = fopen(filename, "wb+");
 	if(fileptr == NULL){
 		perror("Error creating file!");
 		exit(EXIT_FAILURE);
