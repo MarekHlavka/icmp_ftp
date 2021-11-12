@@ -21,7 +21,7 @@ uint16_t in6_cksum(struct ip6_hdr *ip6, uint16_t *payload, int payload_size);
 void prepare_hdr(struct iphdr *ip, struct icmphdr *icmp, int seq);
 
 /*
-* Dunkce na otevření raw socketu a nastavení sokcetu
+* Funkce na otevření raw socketu a nastavení sokcetu
 * aby bylo možné posílat ICMP pakety
 */
 int open_icmp_socket(int version, int server)

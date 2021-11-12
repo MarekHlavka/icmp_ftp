@@ -9,6 +9,7 @@
 
 #define MAX_ADDR_LEN	256
 
+// Funkce na zjištění typu cílové adresy / zjištění adresy z hostname
 int lookup_host (const char *host, char* dst)
 {
   struct addrinfo hints, *res, *result;
@@ -22,6 +23,7 @@ int lookup_host (const char *host, char* dst)
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags |= AI_CANONNAME;
 
+  // Získání informací o adrese
   errcode = getaddrinfo (host, NULL, &hints, &result);
   if (errcode != 0)
     {
@@ -29,6 +31,7 @@ int lookup_host (const char *host, char* dst)
       return -1;
     }
   
+  // Zjištění typu
   res = result;
   inet_ntop (res->ai_family, res->ai_addr->sa_data, addrstr, MAX_ADDR_LEN);
   switch (res->ai_family)
@@ -56,6 +59,7 @@ void run_client(char *address, char *src_filename){
 	char src_ip[MAX_ADDR_LEN];
 	int payload_len;
 
+  // Určení tzpu cílové adresy
 	int ip_version = lookup_host(address, dest);
 	if(ip_version == -1){
 		perror("Wrong address format");

@@ -7,11 +7,14 @@
 #include <unistd.h>
 #include <time.h>
 
+/*
+* Funkce na rozdělení pole na části specifické velikosti
+*/
 unsigned char** divide_payload(unsigned char* payload, int payload_size,
  uint32_t *count, int *last_size){
 
-	uint32_t packet_count = payload_size / MAX_PYLD_SIZE;
-	*last_size = payload_size % MAX_PYLD_SIZE;
+	uint32_t packet_count = payload_size / MAX_PYLD_SIZE; // počet rozdělených polí
+	*last_size = payload_size % MAX_PYLD_SIZE; // velikost poslední části
 
 	if(*last_size > 0){
 		packet_count++;
@@ -20,12 +23,15 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 		*last_size = MAX_PYLD_SIZE;
 	}
 	*count = packet_count;
+
+	// alokace místa pro ukazatele
 	unsigned char** payload_list = (unsigned char**)malloc(packet_count * sizeof(unsigned char*));
 	if(payload_list == NULL){
 		perror("No available memory\n");
 		exit(EXIT_FAILURE);
 	}
 
+	// cyklus pro postupné kopírování částí pole
 	for(uint32_t i = 0; i < packet_count ; i++){
 
 		payload_list[i] = (unsigned char *)malloc(MAX_PYLD_SIZE * sizeof(unsigned char));
@@ -41,16 +47,22 @@ unsigned char** divide_payload(unsigned char* payload, int payload_size,
 
 }
 
+/*
+* Funkce na spojení menších polí do jednoho velkého
+*/
 unsigned char* marge_payload(unsigned char **source, uint32_t count, int last_size){
 
 	int source_size = MAX_PYLD_SIZE;
 
+	// alokace místa pro výsledné pole
 	unsigned char *buff = (unsigned char *)malloc(((MAX_PYLD_SIZE * (count + 1))) * sizeof(unsigned char));
 	if(buff == NULL){
 		perror("No available memory\n");
 		exit(EXIT_FAILURE);
 	}
 	memset(buff, 0, (MAX_PYLD_SIZE * (count + 1)));
+
+	// cyklus pro postupné kopírování menších polí do výsledného
 	for(uint32_t i = 0; i < count; i++){
 
 		if(i == (count -1)){
@@ -62,6 +74,9 @@ unsigned char* marge_payload(unsigned char **source, uint32_t count, int last_si
 
 }
 
+/*
+* Funkce na uvolnění místa v paměti pro pole polí
+*/
 void free_file_buff(unsigned char **buff, int buff_cnt){
 
 	for(int i = 0; i < buff_cnt; i++){
@@ -71,6 +86,9 @@ void free_file_buff(unsigned char **buff, int buff_cnt){
 
 }
 
+/*
+* Funkce na generování náhodných znaků do pole
+*/
 void random_char_array_gen(unsigned char *buff, int size){
 	for(int i = 0; i < size/2; i++){
 		buff[i] = (rand()%26)+65;
@@ -106,22 +124,25 @@ void send_text(uint32_t order, uint32_t count){
 	printf("\rSending %s [%.2f%%]",str , percentage*100);
 }
 
+/*
+* Funkce na zašifrování/rozšifrování zdrojového pole
+*/
 int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	int mode, int src_len, unsigned char *iv_in){
 
 
-	// Creating key
+	// Vytvoření klíče
 	unsigned char key[KEY_SIZE];
 	memset(key, 0, sizeof(key));
 	memcpy(key, KEY, sizeof(KEY));
 
-	// Creating IV
+	// Vytvoření inicializačního vektoru
 	unsigned char iv[IV_SIZE];
 	memcpy(iv, iv_in, IV_SIZE);
 
 	int decryptedtext_len, ciphertext_len;
 	if(mode == AES_ENCRYPT){
-		//Encrypt
+		// Zašifrování
 		unsigned char *ciphertext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 4);
 		if(ciphertext == NULL){
 			perror("No memory available 1\n");
@@ -133,7 +154,7 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 		return ciphertext_len;
 	}
 	if(mode == AES_DECRYPT){
-		//Decrypt
+		// Dešifrování
 		unsigned char *decryptedtext = (unsigned char *)malloc(src_len * sizeof(unsigned char) * 2);
 		if(decryptedtext == NULL){
 			perror("No memory available 1\n");
@@ -148,16 +169,19 @@ int aes_encryption(unsigned char* src_char, unsigned char *dst_char,
 	return 0;
 }
 
+/*
+* Funkce na odeslání celého souboru po jednotlivých paketech
+*/
 void send_icmp_file(char *src, char *dst, char *payload,
 	char *filename, int payload_size, int version){
 
-	unsigned char **buff;
-	uint32_t packet_count = 1;
-	int sock_id;
-	int last_size;
-	unsigned char *unsigned_payload;
-	unsigned char iv[IV_SIZE];	
-	struct icmp_packet packet;
+	unsigned char **buff;				// Ukazatel na pole dat jednotlivých paketů
+	uint32_t packet_count = 1;			// Počet posílaných paketů
+	int sock_id;						// ID soketu
+	int last_size;						// Velikost dat posledního paketu
+	unsigned char *unsigned_payload;	// Pole na uložení payloadu
+	unsigned char iv[IV_SIZE];			// Inicializační vektor
+	struct icmp_packet packet;			// Struktura paketu pro přenost dat k poslání
 
 	unsigned_payload = (unsigned char *)malloc(payload_size*sizeof(unsigned char));
 	if(unsigned_payload == NULL){
@@ -165,11 +189,11 @@ void send_icmp_file(char *src, char *dst, char *payload,
 		exit(-1);
 	}
 
+	// Zkopírovaní dat pro přenos
 	memcpy(unsigned_payload, payload, payload_size);
-	// Generate IV
-	random_char_array_gen(iv, IV_SIZE);
+	random_char_array_gen(iv, IV_SIZE); // Generování iv
 
-	// Encrypt payload
+	// Zašifrování dat
 	unsigned char *encrypted_buff = (unsigned char *)malloc(payload_size*sizeof(unsigned char)*4);
 	if(encrypted_buff == NULL){
 		perror("No memory available 1\n");
@@ -177,22 +201,25 @@ void send_icmp_file(char *src, char *dst, char *payload,
 	}
 	int encrypt_size = aes_encryption(unsigned_payload, encrypted_buff, AES_ENCRYPT, payload_size, iv);
 
+	// Rozdělení dat na velikost pro jednotlivé pakety
 	buff = divide_payload(encrypted_buff, encrypt_size, &packet_count, &last_size);
 
+	// Otevření soketu
 	sock_id = open_icmp_socket(version, 0);
 
-	memcpy(packet.src_addr, src, strlen(src) + 1);
-	memcpy(packet.dest_addr, dst, strlen(dst) + 1);
+	// Kopírování dat do hlavičky paketu
+	memcpy(packet.src_addr, src, strlen(src) + 1);	// Zdrojová IP
+	memcpy(packet.dest_addr, dst, strlen(dst) + 1);	// Cílová IP
+	set_echo_type(&packet, version);				// ICMP typ
+	packet.file_type = FILE_MV;						// Typ zprávy pro přenos souboru
+	packet.cipher_len = encrypt_size;				// Velikost zašifrovaných dat
+	packet.count = packet_count;					// Počet posílaných paketů
+	packet.src_len = payload_size;					// Velikost dat před zašifrováním
+	packet.seq = 0;									// Sekvence paketu
+	memcpy(packet.iv, iv, IV_SIZE);					// Kopírování iv
+	strcpy(packet.filename, filename);				// Kopírování názvu souboru
 
-	set_echo_type(&packet, version);
-	packet.file_type = FILE_MV;
-	packet.cipher_len = encrypt_size;
-	packet.count = packet_count;
-	packet.src_len = payload_size;
-	packet.seq = 0;
-	memcpy(packet.iv, iv, IV_SIZE);
-	strcpy(packet.filename, filename);
-
+	// Cyklus posílání jednotlivých paketů
 	for(uint32_t i = 0; i < packet_count; i++){	
 
 		int packet_size;
@@ -203,22 +230,25 @@ void send_icmp_file(char *src, char *dst, char *payload,
 			packet_size = MAX_PYLD_SIZE;
 		}
 
+		// Kopírování dat, které se liší u každého paketu
 		packet.payload = (unsigned char *)malloc(packet_size*sizeof(unsigned char));
-		memcpy(packet.payload, buff[i], packet_size);
-		packet.payload_size = packet_size;
-		packet.part_size = packet_size;
-		packet.order = i;
+		memcpy(packet.payload, buff[i], packet_size);	// Kopírovaní payloadu
+		packet.payload_size = packet_size;				// Velikost dat v aktualním paketu
+		packet.part_size = packet_size;					
+		packet.order = i;								// Pořadí paketu
 
-		send_text(i, packet_count);
-		send_icmp_packet(sock_id, &packet, version);
+		send_text(i, packet_count);						// Výpis na konzoli
+		send_icmp_packet(sock_id, &packet, version);	// Poslání souboru
 
 		packet.seq++;
-		my_sleep();
+		my_sleep();	// Delay kvůli rychlosti serveru
 
 		free(packet.payload);
 
 	}
 	printf("\rSending ................................ [DONE]\n");
+
+	// Uvolnění zdrojů
 	free(unsigned_payload);
 	free(encrypted_buff);
 	free_file_buff(buff, packet_count);

@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 	char filename[256];
 	char address[128];
 
-
+	// Načtení argumentů
 	while((argument = getopt(argc, argv, ":r:s:l")) != -1){
 		switch(argument){
 			case 'r':
@@ -60,6 +60,7 @@ int main(int argc, char** argv){
 		exit(WRONG_PARAMS);
 	}
 
+	// Zadání ip adresy nebo souoru na serveru
 	if(server_flag && (file_flag || ip_flag)){
 		perror("Server cannot be run with destination IP address or filename\n");
 		printf("F: %d\nIP: %d\nS: %d\n", file_flag, ip_flag, server_flag);
@@ -73,9 +74,11 @@ int main(int argc, char** argv){
 		exit(WRONG_PARAMS);
 	}
 
+	// Spuštění klienta
 	if(server_flag){
 		run_server();
 	}
+	// Spuštění serveru
 	else{
 		run_client(address, filename);
 	}
