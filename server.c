@@ -75,7 +75,7 @@ void run_version(int ver){
 			exit(-1);
 		}
 		// Dešifrování dat
-		int decrypted_len = aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
+		aes_encryption(merged_buff, decrypted, AES_DECRYPT, cipher_len, iv);
 		memcpy(original, decrypted, original_size);
 
 		// Zapsaní dat do souboru ve složce, kde je aplikace spuštěna
